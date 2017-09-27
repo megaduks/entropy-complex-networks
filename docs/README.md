@@ -1,37 +1,38 @@
-## Welcome to GitHub Pages
+# Entropy of Complex Networks
 
-You can use the [editor on GitHub](https://github.com/megaduks/entropy-complex-networks/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
+This is the repository for the *Entropy in Complex Networks* project funded by the grant agreement 2016/23/B/ST6/03962 of the National Science Center in Poland. The research project started in September 2017 and will finish in August 2020.
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+### Research project objectives/ Research hypothesis
 
-### Markdown
+Entropy is the fundamental concept in the theory of information and it is commonly used in different areas of computing science. In machine learning entropy is used for feature selection (mutual information), for text analysis and mining (mutual marginal relevance), for decision tree induction (information gain), and many other. Despite common usage of entropy in computer science, our research suggests that there are serious deficiencies when it comes to the entropy of networked data. Literature review reveals multiple, oftentimes conflicting definitions of entropy proposed over the years for graphs and networs. These definitions can be broadly classified as thermo-dynamic entropies, statistical entropies, entropies based on the information theory, topological entropies, or entropies defined by information functionals. Each of these definitions tries to capture a certain aspect of network structure and to evaluate the information value of the network. One should also add that most of previous theoretical work has been done within the scope of the graph theory, not taking into consideration the volumes of data available in networks today. Consequently, entropy definitions present in the literature tend to be computationally expensive up to the point of not being applicable to large networks.
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+The main research objective of this proposal is, on the one hand, the development of computationally feasible and intuitive entropy definitions for networks, with special emphasis on network characteristics. We plan to develop operational entropy definitions for signed networks and multiplex multi-modal networks. On the other hand, the research plan contains work packages related to the design and development of algorithms that would utilize the proposed entropy to solve typical problems arising in network analysis and mining: finding the partitioning of the network into modules (akin to the classical problem of data clustering) and classifying generative and empirical networks. The third problem which we aim to solve within the scope of this project is the problem of network sampling and statistical inference on samples, along with its confidence. A closely related problem to network sampling is network compression, where we plan to investigate the efficacy of algorithmic entropy (also known as Kolmogorov’s complexity).
 
-```markdown
-Syntax highlighted code block
+### Research project methodology
 
-# Header 1
-## Header 2
-### Header 3
+The project has been divided into two disjoint, chronologically ordered sets of work packages. During the first project phase we plan to investigate theoretical foundations of network science and develop the adaptation and extension of classical entropy definitions for complex networks, with the special emphasis on signed networks and multiplex multi-modal networks. During the second project phase we will concentrate on the computationalization of entropy for complex networks: the development of an entropy-based algorithm for generative and empirical network classification, the development of an entropy-based algorithm for detecting network modules, the development of an entropy-based algorithm for network sampling, the evaluation of the usability of algorithmic entropy for network compression. Main research methodology will consist of theoretical investigation and experimental evaluation. Experiments will be conducted both on generative networks originating from popular theoretical network models (random networks, scale-free networks, small-world networks) as well as on empirical networks downloaded from public repositories (The Koblenz Network Collection, Stanford Large Network Dataset Collection).
 
-- Bulleted
-- List
+### Expected impact of the research project on the development of science, civilization and society
 
-1. Numbered
-2. List
+Proposed research aims at the development of techniques for network analysis and mining. Taking into consideration the widespread of network datasets usage, the growth of their volume and the ubiquitousness of network computing (social networks, semantic networks, technological networks), the project will provide scientific tools for the development of new algorithms and network processing methods, such as network visualization, network modularization, network compression or network classification. The scientific results of the project will inform further investigations in bioinformatics (protein structure processing), sociology (social network analysis) and other disciplines which require large scale network processing.
 
-**Bold** and _Italic_ and `Code` text
+### Popular description
 
-[Link](url) and ![Image](src)
-```
+Entropy is commonly used in science to measure the degree of disorder. The higher the entropy of a given system, the more disorganized the system is. In other words, high entropy represents a high degree of uncertainty about the state of the system. Take the example of a box full of white and black balls. If there are an equal number of white and black balls, the uncertainty about the color of the randomly chosen ball is the highest, which means that the entropy of the box is maximal. On the other hand, if the box contains balls of only one color, there is no uncertainty involved and the entropy of the box equals 0. This simple analogy can be applied to any complex system, within which we want to apply a learning process.
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
+In the world of complex networks algorithms oftentimes are faced with the need to estimate various properties of vertices. Strongly regular networks have low entropy, which does not necessarily imply the uniform distribution of vertex properties, such as degree, betweenness or closeness. It is possible that the network contains a few groups of vertices, and within each group the variance of properties is low, whereas there are significant intra-group differences. Knowing the entropy of centrality measures of vertices can be very useful for network processing algorithms, because it allows to direct the algorithm along the gradients of increasing or decreasing entropy, depending on the task at hand. It is worth mentioning however, that there are many conflicting definitions of network entropy proposed in the scientific literature, and these definitions are often incompatible, while trying to grasp different aspects of network topology. In addition, many of these definitions require computations which are simply infeasible with regard to sizes of contemporary complex networks (e.g. social networks) and render these definitions practically unusable.
 
-### Jekyll Themes
+The goal of this project is to examine the properties of entropies in the world of complex networks, with a special emphasis on signed networks, multiplex networks, and multimodal networks. In signed networks each edge has a valence (most often positive vs. negative), which represents the semantics of the relationship depicted as the edge, such as preference vs. dislike. Multiplex network contain edges that belong to different classes, for instance one type of edges represents the flow of e-mail messages while the other type of edges represents organizational hierarchy relations). Finally, multimodal networks contain vertices that belong to disjoint classes, such as companies and persons with their relationships). The main goal of the project is to develop intuitive, computationally feasible entropy definitions and extending these definitions to new classes of complex networks, as well as proving the utility of the proposed definitions by incorporating them in selected network processing algorithms.
 
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/megaduks/entropy-complex-networks/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
+In the first project phase we will adapt different entropy definitions to the world of complex networks and we will simplify the definitions to make them computationally feasible with respect to sizes of contemporary complex networks. In the second project phase we will operationalize definitions introduced in the first phase by introducing entropy-aware network processing algorithms. We have selected three classes of algorithms: network classification (assigning a given network to a general network topology class), network modularization (finding groups of vertices which form coherent and dense structures within the network), and network compression (by merging vertices and edges, or by sampling vertices and edges). This way we hope to prove the universal usefulness 
 
-### Support or Contact
+## Research team
 
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+- Mikołaj Morzy, Ph.D., D.Sc., Poznan University of Technology, Mikolaj.Morzy@put.poznan.pl
+- Tomasz Kajdanowicz, Ph.D., Wrocław University of Science and Technology, Tomasz.Kajdanowicz@pwr.wroc.pl
+
+## Publications
+
+1. **On Measuring the Complexity of Networks: Kolmogorov Complexity vs. Entropy** Mikołaj Morzy, Tomasz Kajdanowicz, and Przemysław Kazienko 
+
+> One of the most popular methods of estimating the complexity of networks is to measure the entropy of network invariants, such as adjacency matrices or degree sequences. Unfortunately, entropy and all entropy-based information-theoretic measures have several vulnerabilities when applied to evaluation of network complexity. These measures neither are independent of a particular representation of the network, nor can capture the properties of the generative process, which produces the network. As a result, every definition of network complexity, which is based on the entropy of some network invariants, suffers from similar flaws. We argue that entropy is not sufficient to adequately represent the computational description of the network. Instead, we advocate the use of the algorithmic entropy as the basis for complexity definition for networks. Algorithmic entropy evaluates the complexity of the description required for a lossless recreation of the network. In particular, a well-known implementation of algorithmic entropy – Kolmogorov complexity (K-complexity for short) has been considered in the paper. This measure is not affected by a particular choice of network features and it does not depend on the method of network representation. We present new examples of entropy-deceiving networks, which are algorithmically simple and recursive, but they produce high entropy estimations for various network invariants. We perform experiments on Shannon entropy and K-complexity for gradually evolving networks. The results of these experiments point to K-complexity as the more robust and reliable measure of network complexity. The original contribution of the paper includes the introduction of several new entropy-deceiving networks and the empirical comparison of entropy and K-complexity as fundamental quantities for constructing complexity measures for networks.
