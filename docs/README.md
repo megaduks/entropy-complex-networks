@@ -1,3 +1,16 @@
+Table of Contents
+=================
+
+   * [Entropy of Complex Networks](#entropy-of-complex-networks)
+         * [Research project objectives/ Research hypothesis](#research-project-objectives-research-hypothesis)
+         * [Research project methodology](#research-project-methodology)
+         * [Expected impact of the research project on the development of science, civilization and society](#expected-impact-of-the-research-project-on-the-development-of-science-civilization-and-society)
+         * [Popular description](#popular-description)
+      * [Research team](#research-team)
+      * [Publications](#publications)
+
+Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
+
 # Entropy of Complex Networks
 
 This is the repository for the *Entropy in Complex Networks* project funded by the grant agreement 2016/23/B/ST6/03962 of the National Science Center in Poland. The research project started in September 2017 and will finish in August 2020.
