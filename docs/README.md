@@ -40,8 +40,8 @@ In the first project phase we will adapt different entropy definitions to the wo
 
 ## Research team
 
-- Mikołaj Morzy, Ph.D., D.Sc., Poznan University of Technology, Mikolaj.Morzy@put.poznan.pl
-- Tomasz Kajdanowicz, Ph.D., Wrocław University of Science and Technology, Tomasz.Kajdanowicz@pwr.wroc.pl
+- Mikołaj Morzy, Ph.D., D.Sc., Poznan University of Technology, [Mikolaj.Morzy@put.poznan.pl](Mikolaj.Morzy@put.poznan.pl)
+- Tomasz Kajdanowicz, Ph.D., Wrocław University of Science and Technology, [Tomasz.Kajdanowicz@pwr.wroc.pl](Tomasz.Kajdanowicz@pwr.wroc.pl)
 
 ## Publications
 
