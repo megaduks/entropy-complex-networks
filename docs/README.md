@@ -1,13 +1,12 @@
 Table of Contents
 =================
 
-   * [Entropy of Complex Networks](#entropy-of-complex-networks)
-         * [Research project objectives/ Research hypothesis](#research-project-objectives-research-hypothesis)
-         * [Research project methodology](#research-project-methodology)
-         * [Expected impact of the research project on the development of science, civilization and society](#expected-impact-of-the-research-project-on-the-development-of-science-civilization-and-society)
-         * [Popular description](#popular-description)
-      * [Research team](#research-team)
-      * [Publications](#publications)
+* [Objectives](#research-project-objectives-research-hypothesis)
+* [Methodology](#research-project-methodology)
+* [Expected impact](#expected-impact-of-the-research-project-on-the-development-of-science-civilization-and-society)
+* [Popular description](#popular-description)
+* [Research team](#research-team)
+* [Publications](#publications)
 
 Created by [gh-md-toc](https://github.com/ekalinin/github-markdown-toc)
 
