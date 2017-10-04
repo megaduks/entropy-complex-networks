@@ -1,4 +1,6 @@
-## Welcome to GitHub Pages
+## Entropy of Complex Networks
 
-You can use the [editor on GitHub](https://github.com/megaduks/entropy-complex-networks/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
+#### Scientific project funded by the Polish National Science Center 
+
+Project description, publications, data, and code are described at [project's website](https://megaduks.github.io/entropy-complex-networks/)
 
