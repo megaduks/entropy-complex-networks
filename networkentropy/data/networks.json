@@ -1,0 +1,21 @@
+{
+  "python": {
+    "description": "Python Dependency Network",
+    "file": "requirements.csv",
+    "domain": "technological",
+    "subdomain": "software",
+    "url": "http://kgullikson88.github.io/blog/Downloads/PypiDependencies/requirements.csv",
+    "format": "edgelist",
+    "citation": "http://kgullikson88.github.io/blog/pypi-analysis.html"
+  },
+
+  "python2": {
+    "description": "Python Dependency Network",
+    "file": "requirements.csv",
+    "domain": "technological",
+    "subdomain": "software",
+    "url": "http://kgullikson88.github.io/blog/Downloads/PypiDependencies/requirements.csv",
+    "format": "edgelist",
+    "citation": "http://kgullikson88.github.io/blog/pypi-analysis.html"
+  }
+}
