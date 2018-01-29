@@ -1,5 +1,6 @@
 from networkentropy import __networks__
 
+import os
 import pandas as pd
 import numpy as np
 import networkx as nx
@@ -102,12 +103,16 @@ def load_st_mark_ecosystem(u):
     _tmpfile = '/tmp/stmark.net'
 
     local_file, headers = urllib.request.urlretrieve(u, _tmpfile)
-    lines = open(local_file).readlines()
+    with open(local_file) as f:
+        lines = f.readlines()
 
     # read only the *.net part of Pajek's *.paj project file
-    open(_tmpfile, "w").writelines(lines[67:480])
+    with open(_tmpfile, "w") as f:
+        f.writelines(lines[67:480])
 
     g = nx.read_pajek(_tmpfile)
+
+    os.remove(_tmpfile)
 
     return g
 
@@ -124,7 +129,6 @@ def load_power_grid(u):
 
     tar = tarfile.open(local_file, mode="r:bz2")
     network_file = tar.extractfile(filename)
-    # tar.close()
 
     g = nx.read_edgelist(network_file, comments='%')
 
@@ -143,9 +147,10 @@ def load_celegans(u):
 
     zip = zipfile.ZipFile(local_file, mode="r")
     network_file = zip.extract(filename)
-    # tar.close()
 
     g = nx.read_pajek(network_file)
+
+    os.remove(filename)
 
     return g
 
