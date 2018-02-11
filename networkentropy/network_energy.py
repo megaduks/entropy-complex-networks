@@ -5,12 +5,6 @@ import scipy.stats
 
 from itertools import product
 
-from tqdm import tqdm
-import pandas as pd
-
-import matplotlib.pyplot as plt
-
-
 def get_randic_matrix(G):
     """
     Computes the Randić matrix of a graph
@@ -128,50 +122,4 @@ def get_distance_energy(G):
     return distance_energy
 
 # TODO add the retrieval of spectra from a graph
-
-if __name__ == '__main__':
-
-    entropies = []
-
-    for p in tqdm(range(0,100, 10)):
-
-        # G = nx.erdos_renyi_graph(n=100, p=p/100)
-        G = nx.watts_strogatz_graph(n=100, k=2, p=p/100)
-        # G = nx.powerlaw_cluster_graph(n=100, m=4, p=p/100)
-        # G = nx.random_lobster(n=100, p1=p/100, p2=p/100)
-
-        results = []
-
-        for n in G.nodes:
-            g = nx.ego_graph(G=G, n=n)
-
-            E_randic = get_randic_energy(g)
-            E_graph = get_graph_energy(g)
-            E_laplace = get_laplacian_energy(g)
-
-            results.append((E_randic, E_graph, E_laplace))
-
-        e_randic, e_graph, e_laplace = map(list, zip(*results))
-
-        randic_cnt, _ = np.histogram(e_randic)
-        graph_cnt, _ = np.histogram(e_graph)
-        laplace_cnt, _ = np.histogram(e_laplace)
-
-        randic_entropy = scipy.stats.entropy(randic_cnt)
-        graph_entropy = scipy.stats.entropy(graph_cnt)
-        laplace_entropy = scipy.stats.entropy(laplace_cnt)
-
-        entropies.append((randic_entropy, graph_entropy, laplace_entropy))
-
-    y1, y2, y3 = map(list, zip(*entropies))
-
-    x = range(0,100,10)
-
-    fig, ax = plt.subplots()
-    ax.plot(x, y1, color='red', label='randic')
-    ax.plot(x, y2, color='green', label='graph')
-    ax.plot(x, y3, color='blue', label='laplace')
-
-    plt.show()
-
-    print(pd.DataFrame({'x':x, 'randic': y1, 'graph': y2, 'laplace': y3}))
+# TODO fix the computation of the Laplacian energy by subtracting 2m/n
