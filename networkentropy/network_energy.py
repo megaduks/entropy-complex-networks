@@ -5,6 +5,7 @@ import scipy.stats
 
 from itertools import product
 
+
 def get_randic_matrix(G):
     """
     Computes the Randić matrix of a graph
@@ -60,6 +61,7 @@ def get_randic_energy(G):
 
     return randic_energy
 
+
 def get_randic_spectrum(G):
     """
     Computes the spectrum  (i.e. distribution of egonetwork) Randić energy of a graph
@@ -74,6 +76,7 @@ def get_randic_spectrum(G):
     ]
 
     return np.asarray(result)
+
 
 def get_laplacian_energy(G):
     """
@@ -91,6 +94,7 @@ def get_laplacian_energy(G):
 
     return laplacian_energy
 
+
 def get_laplacian_spectrum(G):
     """
     Computes the spectrum of the Laplacian energy of a graph
@@ -104,6 +108,9 @@ def get_laplacian_spectrum(G):
         for v in G.nodes
     ]
 
+    return np.asarray(result)
+
+
 def get_graph_energy(G):
     """
     Computes the energy of the adjacency matrix of a graph
@@ -116,6 +123,23 @@ def get_graph_energy(G):
     graph_energy = np.abs(scipy.linalg.eigvals(M).real).sum()
 
     return graph_energy
+
+
+def get_graph_spectrum(G):
+    """
+    Computes the spectrum of the graph energy of a graph
+
+    :param G: input graph
+    :return: NumPy array
+    """
+
+    result = [
+        get_graph_energy(nx.ego_graph(G, v))
+        for v in G.nodes
+    ]
+
+    return np.asarray(result)
+
 
 def get_distance_matrix(G):
     """
