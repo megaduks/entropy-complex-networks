@@ -60,6 +60,19 @@ def get_randic_energy(G):
 
     return randic_energy
 
+def get_randic_spectrum(G):
+    """
+    Computes the spectrum  (i.e. distribution of egonetwork) Randić energy of a graph
+
+    :param G: input graph
+    :return: NumPy array
+    """
+    result = [
+        get_randic_energy(nx.ego_graph(G, v))
+        for v in G.nodes
+    ]
+
+    return np.asarray(result)
 
 def get_laplacian_energy(G):
     """
@@ -123,6 +136,3 @@ def get_distance_energy(G):
     distance_energy = np.abs(scipy.linalg.eigvals(D).real).sum()
 
     return distance_energy
-
-# TODO add the retrieval of spectra from a graph
-# TODO fix the computation of the Laplacian energy by subtracting 2m/n
