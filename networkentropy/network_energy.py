@@ -70,7 +70,10 @@ def get_laplacian_energy(G):
     """
 
     L = nx.laplacian_matrix(G).todense()
-    laplacian_energy = np.abs(scipy.linalg.eigvals(L).real).sum()
+    eigvals = scipy.linalg.eigvals(L).real
+    const = nx.number_of_edges(G) * 2 / nx.number_of_nodes(G)
+    consts = np.full(nx.number_of_nodes(G), const)
+    laplacian_energy = np.abs(np.subtract(eigvals, consts)).sum()
 
     return laplacian_energy
 
