@@ -173,3 +173,19 @@ def get_distance_energy(G):
     distance_energy = np.abs(scipy.linalg.eigvals(D).real).sum()
 
     return distance_energy
+
+
+def get_distance_spectrum(G):
+    """
+    Computes the spectrum of the distance matrix of a graph
+
+    :param G: input graph
+    :return: NumPy array
+    """
+
+    result = [
+        get_distance_energy(nx.ego_graph(G, v))
+        for v in G.nodes
+    ]
+
+    return np.asarray(result)
