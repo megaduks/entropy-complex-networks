@@ -67,6 +67,7 @@ def get_randic_spectrum(G):
     :param G: input graph
     :return: NumPy array
     """
+
     result = [
         get_randic_energy(nx.ego_graph(G, v))
         for v in G.nodes
@@ -90,6 +91,18 @@ def get_laplacian_energy(G):
 
     return laplacian_energy
 
+def get_laplacian_spectrum(G):
+    """
+    Computes the spectrum of the Laplacian energy of a graph
+
+    :param G: input graph
+    :return: NumPy array
+    """
+
+    result = [
+        get_laplacian_energy(nx.ego_graph(G, v))
+        for v in G.nodes
+    ]
 
 def get_graph_energy(G):
     """
