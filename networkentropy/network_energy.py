@@ -62,16 +62,17 @@ def get_randic_energy(G):
     return randic_energy
 
 
-def get_randic_spectrum(G):
+def get_randic_spectrum(G, radius=1):
     """
     Computes the spectrum  (i.e. distribution of egonetwork) Randić energy of a graph
 
     :param G: input graph
+    :param radius: size of the egocentric network
     :return: NumPy array
     """
 
     result = [
-        get_randic_energy(nx.ego_graph(G, v))
+        get_randic_energy(nx.ego_graph(G, v, radius=radius))
         for v in G.nodes
     ]
 
@@ -95,16 +96,17 @@ def get_laplacian_energy(G):
     return laplacian_energy
 
 
-def get_laplacian_spectrum(G):
+def get_laplacian_spectrum(G, radius=1):
     """
     Computes the spectrum of the Laplacian energy of a graph
 
     :param G: input graph
+    :param radius: size of the egocentric network
     :return: NumPy array
     """
 
     result = [
-        get_laplacian_energy(nx.ego_graph(G, v))
+        get_laplacian_energy(nx.ego_graph(G, v, radius=radius))
         for v in G.nodes
     ]
 
@@ -125,16 +127,17 @@ def get_graph_energy(G):
     return graph_energy
 
 
-def get_graph_spectrum(G):
+def get_graph_spectrum(G, radius=1):
     """
     Computes the spectrum of the graph energy of a graph
 
     :param G: input graph
+    :param radius: size of the egocentric network
     :return: NumPy array
     """
 
     result = [
-        get_graph_energy(nx.ego_graph(G, v))
+        get_graph_energy(nx.ego_graph(G, v, radius=radius))
         for v in G.nodes
     ]
 
@@ -175,16 +178,17 @@ def get_distance_energy(G):
     return distance_energy
 
 
-def get_distance_spectrum(G):
+def get_distance_spectrum(G, radius=1):
     """
     Computes the spectrum of the distance matrix of a graph
 
     :param G: input graph
+    :param radius: size of the egocentric network
     :return: NumPy array
     """
 
     result = [
-        get_distance_energy(nx.ego_graph(G, v))
+        get_distance_energy(nx.ego_graph(G, v, radius=radius))
         for v in G.nodes
     ]
 
