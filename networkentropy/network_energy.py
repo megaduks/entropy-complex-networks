@@ -5,6 +5,8 @@ import scipy.stats
 
 from itertools import product
 
+# TODO: add an option to normalize the distribution of energy centrality
+
 
 def get_randic_matrix(G):
     """
