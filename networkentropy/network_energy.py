@@ -25,7 +25,7 @@ def get_randic_matrix(G: nx.Graph) -> np.matrix:
     :return: NumPy matrix
     """
 
-    D = nx.degree(G: nx.Graph) -> np.matrix
+    D = nx.degree(G)
 
     randic_values = [1 / np.sqrt(D[v] * D[w]) if G.has_edge(v, w) else 0 for (v, w) in product(G.nodes, G.nodes)]
     randic_matrix = np.matrix(randic_values).reshape(G.number_of_nodes(), G.number_of_nodes())
@@ -188,70 +188,5 @@ def graph_energy_centrality(G: nx.Graph, radius: int=1) -> Dict:
     """
 
     result = {n: get_graph_energy(nx.ego_graph(G=G, n=n, radius=radius)) for n in G.nodes}
-    return result
-
-
-def get_distance_matrix(G: nx.Graph) -> np.matrix:
-    """
-    Computes the distance matrix of a graph
-
-    :param G: input graph
-    :return: matrix with elements representing shortest paths between nodes
-    """
-
-    distance_matrix = np.zeros(G.number_of_nodes() * G.number_of_nodes()).\
-        reshape(G.number_of_nodes(), G.number_of_nodes())
-    distance_values = [(x,y,d[y]) for (x,d) in nx.all_pairs_dijkstra_path_length(G) for y in d.keys()]
-
-    for (x,y,d) in distance_values:
-        distance_matrix[x,y] = d
-
-    return distance_matrix
-
-
-def get_distance_energy(G: nx.Graph) -> float:
-    """
-    Computes the distance energy of a graph
-
-    Distance energy is the sum of all absolute eigenvalues of the distance matrix of a graph
-
-    :param G: input graph
-    :return: float: distance energy of a graph
-    """
-
-    D = get_distance_matrix(G)
-    distance_energy = np.abs(scipy.linalg.eigvals(D).real).sum()
-
-    return distance_energy
-
-
-def get_distance_spectrum(G: nx.Graph, radius: int=1):
-    """
-    Computes the spectrum of the distance matrix of a graph
-
-    :param G: input graph
-    :param radius: size of the egocentric network
-    :return: NumPy array
-    """
-
-    result = [
-        get_distance_energy(nx.ego_graph(G, v, radius=radius))
-        for v in G.nodes
-    ]
-
-    return np.asarray(result)
-
-
-def distance_centrality(G: nx.Graph, radius: int=1) -> Dict:
-    """
-    Computes the centrality index for each vertex by computing the distance energy of that vertex's
-    neighborhood of a given radius
-
-    :param G: input graph
-    :param radius: radius of the egocentric network
-    :return: dictionary with distance energy centrality for each vertex
-    """
-
-    result = {n: get_distance_energy(nx.ego_graph(G=G, n=n, radius=radius)) for n in G.nodes}
     return result
 
