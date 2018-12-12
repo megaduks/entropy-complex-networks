@@ -3,12 +3,15 @@ import networkx as nx
 import scipy
 import scipy.stats
 
+from typing import Dict
+
 from itertools import product
 
 # TODO: add an option to normalize the distribution of energy centrality
+# TODO: add typing
 
 
-def get_randic_matrix(G):
+def get_randic_matrix(G: nx.Graph) -> np.matrix:
     """
     Computes the Randić matrix of a graph
 
@@ -22,7 +25,7 @@ def get_randic_matrix(G):
     :return: NumPy matrix
     """
 
-    D = nx.degree(G)
+    D = nx.degree(G: nx.Graph) -> np.matrix
 
     randic_values = [1 / np.sqrt(D[v] * D[w]) if G.has_edge(v, w) else 0 for (v, w) in product(G.nodes, G.nodes)]
     randic_matrix = np.matrix(randic_values).reshape(G.number_of_nodes(), G.number_of_nodes())
@@ -30,7 +33,7 @@ def get_randic_matrix(G):
     return randic_matrix
 
 
-def get_randic_index(G):
+def get_randic_index(G: nx.Graph) -> float:
     """
     Computes the Randić index of a graph
 
@@ -48,7 +51,7 @@ def get_randic_index(G):
     return randic_index
 
 
-def get_randic_energy(G):
+def get_randic_energy(G: nx.Graph) -> float:
     """
     Computes the Randić energy of a graph
 
@@ -64,7 +67,7 @@ def get_randic_energy(G):
     return randic_energy
 
 
-def get_randic_spectrum(G, radius=1):
+def get_randic_spectrum(G: nx.Graph, radius: int=1) -> np.array:
     """
     Computes the spectrum  (i.e. distribution of egonetwork) Randić energy of a graph
 
@@ -81,7 +84,7 @@ def get_randic_spectrum(G, radius=1):
     return np.asarray(result)
 
 
-def randic_centrality(G, radius=1):
+def randic_centrality(G: nx.Graph, radius: int=1):
     """
     Computes the centrality index for each vertex by computing the Randić energy of that vertex's
     neighborhood of a given radius
@@ -95,7 +98,7 @@ def randic_centrality(G, radius=1):
     return result
 
 
-def get_laplacian_energy(G):
+def get_laplacian_energy(G: nx.Graph) -> float:
     """
     Computes the energy of the Laplacian of a graph
 
@@ -112,7 +115,7 @@ def get_laplacian_energy(G):
     return laplacian_energy
 
 
-def get_laplacian_spectrum(G, radius=1):
+def get_laplacian_spectrum(G: nx.Graph, radius: int=1) -> np.array:
     """
     Computes the spectrum of the Laplacian energy of a graph
 
@@ -129,7 +132,7 @@ def get_laplacian_spectrum(G, radius=1):
     return np.asarray(result)
 
 
-def laplacian_centrality(G, radius=1):
+def laplacian_centrality(G: nx.Graph, radius: int=1) -> Dict:
     """
     Computes the centrality index for each vertex by computing the Laplacian energy of that vertex's
     neighborhood of a given radius
@@ -143,7 +146,7 @@ def laplacian_centrality(G, radius=1):
     return result
 
 
-def get_graph_energy(G):
+def get_graph_energy(G: nx.Graph) -> float:
     """
     Computes the energy of the adjacency matrix of a graph
 
@@ -157,7 +160,7 @@ def get_graph_energy(G):
     return graph_energy
 
 
-def get_graph_spectrum(G, radius=1):
+def get_graph_spectrum(G: nx.Graph, radius: int=1) -> np.array:
     """
     Computes the spectrum of the graph energy of a graph
 
@@ -174,7 +177,7 @@ def get_graph_spectrum(G, radius=1):
     return np.asarray(result)
 
 
-def graph_energy_centrality(G, radius=1):
+def graph_energy_centrality(G: nx.Graph, radius: int=1) -> Dict:
     """
     Computes the centrality index for each vertex by computing the graph energy of that vertex's
     neighborhood of a given radius
@@ -188,7 +191,7 @@ def graph_energy_centrality(G, radius=1):
     return result
 
 
-def get_distance_matrix(G):
+def get_distance_matrix(G: nx.Graph) -> np.matrix:
     """
     Computes the distance matrix of a graph
 
@@ -206,7 +209,7 @@ def get_distance_matrix(G):
     return distance_matrix
 
 
-def get_distance_energy(G):
+def get_distance_energy(G: nx.Graph) -> float:
     """
     Computes the distance energy of a graph
 
@@ -222,7 +225,7 @@ def get_distance_energy(G):
     return distance_energy
 
 
-def get_distance_spectrum(G, radius=1):
+def get_distance_spectrum(G: nx.Graph, radius: int=1):
     """
     Computes the spectrum of the distance matrix of a graph
 
@@ -239,7 +242,7 @@ def get_distance_spectrum(G, radius=1):
     return np.asarray(result)
 
 
-def distance_centrality(G, radius=1):
+def distance_centrality(G: nx.Graph, radius: int=1) -> Dict:
     """
     Computes the centrality index for each vertex by computing the distance energy of that vertex's
     neighborhood of a given radius
