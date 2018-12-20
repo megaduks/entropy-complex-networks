@@ -3,9 +3,15 @@ import networkx as nx
 import scipy
 import scipy.stats
 
+from typing import Dict
+
 from itertools import product
 
-def get_randic_matrix(G):
+# TODO: add an option to normalize the distribution of energy centrality
+# TODO: add typing
+
+
+def get_randic_matrix(G: nx.Graph) -> np.matrix:
     """
     Computes the Randić matrix of a graph
 
@@ -27,7 +33,7 @@ def get_randic_matrix(G):
     return randic_matrix
 
 
-def get_randic_index(G):
+def get_randic_index(G: nx.Graph) -> float:
     """
     Computes the Randić index of a graph
 
@@ -45,7 +51,7 @@ def get_randic_index(G):
     return randic_index
 
 
-def get_randic_energy(G):
+def get_randic_energy(G: nx.Graph) -> float:
     """
     Computes the Randić energy of a graph
 
@@ -61,7 +67,38 @@ def get_randic_energy(G):
     return randic_energy
 
 
-def get_laplacian_energy(G):
+def get_randic_spectrum(G: nx.Graph, radius: int=1) -> np.array:
+    """
+    Computes the spectrum  (i.e. distribution of egonetwork) Randić energy of a graph
+
+    :param G: input graph
+    :param radius: radius of the egocentric network
+    :return: NumPy array
+    """
+
+    result = [
+        get_randic_energy(nx.ego_graph(G, v, radius=radius))
+        for v in G.nodes
+    ]
+
+    return np.asarray(result)
+
+
+def randic_centrality(G: nx.Graph, radius: int=1):
+    """
+    Computes the centrality index for each vertex by computing the Randić energy of that vertex's
+    neighborhood of a given radius
+
+    :param G: input graph
+    :param radius: radius of the egocentric network
+    :return: dictionary with Randić energy centrality for each vertex
+    """
+
+    result = {n: get_randic_energy(nx.ego_graph(G=G, n=n, radius=radius)) for n in G.nodes}
+    return result
+
+
+def get_laplacian_energy(G: nx.Graph) -> float:
     """
     Computes the energy of the Laplacian of a graph
 
@@ -70,12 +107,46 @@ def get_laplacian_energy(G):
     """
 
     L = nx.laplacian_matrix(G).todense()
-    laplacian_energy = np.abs(scipy.linalg.eigvals(L).real).sum()
+    eigvals = scipy.linalg.eigvals(L).real
+    const = nx.number_of_edges(G) * 2 / nx.number_of_nodes(G)
+    consts = np.full(nx.number_of_nodes(G), const)
+    laplacian_energy = np.abs(np.subtract(eigvals, consts)).sum()
 
     return laplacian_energy
 
 
-def get_graph_energy(G):
+def get_laplacian_spectrum(G: nx.Graph, radius: int=1) -> np.array:
+    """
+    Computes the spectrum of the Laplacian energy of a graph
+
+    :param G: input graph
+    :param radius: size of the egocentric network
+    :return: NumPy array
+    """
+
+    result = [
+        get_laplacian_energy(nx.ego_graph(G, v, radius=radius))
+        for v in G.nodes
+    ]
+
+    return np.asarray(result)
+
+
+def laplacian_centrality(G: nx.Graph, radius: int=1) -> Dict:
+    """
+    Computes the centrality index for each vertex by computing the Laplacian energy of that vertex's
+    neighborhood of a given radius
+
+    :param G: input graph
+    :param radius: radius of the egocentric network
+    :return: dictionary with Laplacian energy centrality for each vertex
+    """
+
+    result = {n: get_laplacian_energy(nx.ego_graph(G=G, n=n, radius=radius)) for n in G.nodes}
+    return result
+
+
+def get_graph_energy(G: nx.Graph) -> float:
     """
     Computes the energy of the adjacency matrix of a graph
 
@@ -88,38 +159,34 @@ def get_graph_energy(G):
 
     return graph_energy
 
-def get_distance_matrix(G):
+
+def get_graph_spectrum(G: nx.Graph, radius: int=1) -> np.array:
     """
-    Computes the distance matrix of a graph
+    Computes the spectrum of the graph energy of a graph
 
     :param G: input graph
-    :return: matrix with elements representing shortest paths between nodes
+    :param radius: size of the egocentric network
+    :return: NumPy array
     """
 
-    distance_matrix = np.zeros(G.number_of_nodes() * G.number_of_nodes()).\
-        reshape(G.number_of_nodes(), G.number_of_nodes())
-    distance_values = [(x,y,d[y]) for (x,d) in nx.all_pairs_dijkstra_path_length(G) for y in d.keys()]
+    result = [
+        get_graph_energy(nx.ego_graph(G, v, radius=radius))
+        for v in G.nodes
+    ]
 
-    for (x,y,d) in distance_values:
-        distance_matrix[x,y] = d
-
-    return distance_matrix
+    return np.asarray(result)
 
 
-def get_distance_energy(G):
+def graph_energy_centrality(G: nx.Graph, radius: int=1) -> Dict:
     """
-    Computes the distance energy of a graph
-
-    Distance energy is the sum of all absolute eigenvalues of the distance matrix of a graph
+    Computes the centrality index for each vertex by computing the graph energy of that vertex's
+    neighborhood of a given radius
 
     :param G: input graph
-    :return: float: distance energy of a graph
+    :param radius: radius of the egocentric network
+    :return: dictionary with graph energy centrality for each vertex
     """
 
-    D = get_distance_matrix(G)
-    distance_energy = np.abs(scipy.linalg.eigvals(D).real).sum()
+    result = {n: get_graph_energy(nx.ego_graph(G=G, n=n, radius=radius)) for n in G.nodes}
+    return result
 
-    return distance_energy
-
-# TODO add the retrieval of spectra from a graph
-# TODO fix the computation of the Laplacian energy by subtracting 2m/n
