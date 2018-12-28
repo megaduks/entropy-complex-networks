@@ -5,13 +5,17 @@ import networkx as nx
 import scipy
 import scipy.stats
 
-from typing import Dict
+from typing import Dict, List
 
 from itertools import product
 
 # TODO: add an option to normalize the distribution of energy centrality
 # TODO: add typing to the entire project
-# TODO: add functions to compute energy gradients for different types of energies
+# TODO: add functions to compute energy gradients for graph energy
+# TODO: add functions to compute energy gradients for Randić energy
+# TODO: add functions to compute energy gradients for Laplacian energy
+# TODO: add function to compute pagerank-like centrality based on graph energy gradients
+
 
 
 def get_randic_matrix(g: object) -> np.matrix:
@@ -163,7 +167,7 @@ def get_graph_energy(g: object) -> float:
     return graph_energy
 
 
-def get_graph_spectrum(g: object, radius: int=1) -> np.array:
+def get_graph_spectrum(g: object, radius: int = 1) -> np.array:
     """
     Computes the spectrum of the graph energy of a graph
 
@@ -180,7 +184,7 @@ def get_graph_spectrum(g: object, radius: int=1) -> np.array:
     return np.asarray(result)
 
 
-def graph_energy_centrality(g: object, radius: int=1) -> Dict:
+def graph_energy_centrality(g: object, radius: int = 1) -> Dict:
     """
     Computes the centrality index for each vertex by computing the graph energy of that vertex's
     neighborhood of a given radius
@@ -193,3 +197,70 @@ def graph_energy_centrality(g: object, radius: int=1) -> Dict:
     result = {n: get_graph_energy(nx.ego_graph(g=g, n=n, radius=radius)) for n in g.nodes}
     return result
 
+
+def get_graph_energy_gradients(g: object, energy_dist: List[float] = None) -> Dict:
+    """
+    Compute gradients of graph energy for all nodes
+
+    :param g: input graph
+    :param energy_dist: precomputed distribution of energy in the graph g
+    :return: dictionary with graph energy differences for each node
+    """
+
+    if energy_dist is None:
+        energy_dist = get_graph_spectrum(g)
+
+    result = {
+        n: {
+            nn: energy_dist[n] - energy_dist[nn]
+            for nn
+            in nx.ego_graph(g, n)
+            if nn != n
+        }
+        for n
+        in g.nodes
+    }
+
+    return result
+
+
+def get_max_graph_energy_gradient(energy_gradients: Dict) -> List[int]:
+    """
+    Finds the list of nodes representing the vector of max gradients. For each node the list contains
+    the label of node's neighbor with the maximum energy gradient
+
+    :param energy_gradients: dictionary with all energy gradients
+    :return: list of nodes which represent the maximum gradient of graph energy
+    """
+
+    result = [
+        max(energy_gradients[n], key=lambda key: energy_gradients[n][key])
+        if (energy_gradients[n] and max(energy_gradients[n].values()) > 0) else None
+        for n
+        in energy_gradients.keys()
+    ]
+
+    return result
+
+
+def graph_energy_gradient_centrality(g: object) -> Dict:
+    """
+    Computes the stationary distribution of the random walk directed by the gradient of graph energy
+
+    :param g: input graph
+    :return: list of centrality scores for each node
+    """
+
+    gs = get_graph_spectrum(g)
+
+    gradients = {
+        (u, v): gs[u] - gs[v]
+        if (gs[u] - gs[v]) > 0 else 0.0
+        for (u, v)
+        in g.edges
+    }
+
+    nx.set_edge_attributes(g, gradients, 'gradients')
+    result = nx.pagerank(g, weight='gradients')
+
+    return result
