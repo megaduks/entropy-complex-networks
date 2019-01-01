@@ -9,6 +9,8 @@ from builtins import object
 from typing import Dict, List
 import networkx as nx
 
+# TODO Add filter for the minimum number of nodes (avoid processing of too small networks)
+# TODO Add filter to remove cliques and extremely dense networks
 
 def read_avalilable_datasets_konect() -> List[str] :
     """
