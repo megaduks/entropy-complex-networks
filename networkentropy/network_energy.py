@@ -18,7 +18,7 @@ from itertools import product
 
 
 
-def get_randic_matrix(g: object) -> np.matrix:
+def get_randic_matrix(g: object) -> np.array:
     """
     Computes the Randić matrix of a graph
 
@@ -29,13 +29,13 @@ def get_randic_matrix(g: object) -> np.matrix:
                0 otherwise
 
     :param g: input graph
-    :return: NumPy matrix
+    :return: NumPy array
     """
 
     D = nx.degree(g)
 
     randic_values = [1 / np.sqrt(D[v] * D[w]) if g.has_edge(v, w) else 0 for (v, w) in product(g.nodes, g.nodes)]
-    randic_matrix = np.matrix(randic_values).reshape(g.number_of_nodes(), g.number_of_nodes())
+    randic_matrix = np.array(randic_values).reshape(g.number_of_nodes(), g.number_of_nodes())
 
     return randic_matrix
 
@@ -91,17 +91,23 @@ def get_randic_spectrum(g: object, radius: int = 1) -> np.array:
     return np.asarray(result)
 
 
-def randic_centrality(g: object, radius: int = 1):
+def randic_centrality(g: object, radius: int = 1, normalize: bool = False):
     """
     Computes the centrality index for each vertex by computing the Randić energy of that vertex's
     neighborhood of a given radius
 
     :param g: input graph
     :param radius: radius of the egocentric network
+    :param normalize: if True, the result is normalized to sum to 1
     :return: dictionary with Randić energy centrality for each vertex
     """
 
     result = {n: get_randic_energy(nx.ego_graph(G=g, n=n, radius=radius)) for n in g.nodes}
+
+    if normalize:
+        s = sum(result.values())
+        result = { n: v/s for n,v in result.items() }
+
     return result
 
 
@@ -139,17 +145,23 @@ def get_laplacian_spectrum(g: object, radius: int = 1) -> np.array:
     return np.asarray(result)
 
 
-def laplacian_centrality(g: object, radius: int = 1) -> Dict:
+def laplacian_centrality(g: object, radius: int = 1, normalize: bool = False) -> Dict:
     """
     Computes the centrality index for each vertex by computing the Laplacian energy of that vertex's
     neighborhood of a given radius
 
     :param g: input graph
     :param radius: radius of the egocentric network
+    :param normalize: if True, the result is normalized to sum to 1
     :return: dictionary with Laplacian energy centrality for each vertex
     """
 
     result = {n: get_laplacian_energy(nx.ego_graph(G=g, n=n, radius=radius)) for n in g.nodes}
+
+    if normalize:
+        s = sum(result.values())
+        result = { n: v/s for n,v in result.items() }
+
     return result
 
 
@@ -184,17 +196,23 @@ def get_graph_spectrum(g: object, radius: int = 1) -> np.array:
     return np.asarray(result)
 
 
-def graph_energy_centrality(g: object, radius: int = 1) -> Dict:
+def graph_energy_centrality(g: object, radius: int = 1, normalize: bool = False) -> Dict:
     """
     Computes the centrality index for each vertex by computing the graph energy of that vertex's
     neighborhood of a given radius
 
     :param g: input graph
     :param radius: radius of the egocentric network
+    :param normalize: if True, the result is normalized to sum to 1
     :return: dictionary with graph energy centrality for each vertex
     """
 
     result = {n: get_graph_energy(nx.ego_graph(G=g, n=n, radius=radius)) for n in g.nodes}
+
+    if normalize:
+        s = sum(result.values())
+        result = { n: v/s for n,v in result.items() }
+
     return result
 
 
@@ -243,11 +261,12 @@ def get_max_graph_energy_gradient(energy_gradients: Dict) -> List[int]:
     return result
 
 
-def graph_energy_gradient_centrality(g: object) -> Dict:
+def graph_energy_gradient_centrality(g: object, normalize: bool = False) -> Dict:
     """
     Computes the stationary distribution of the random walk directed by the gradient of graph energy
 
     :param g: input graph
+    :param normalize: if True, the result is normalized to sum to 1
     :return: list of centrality scores for each node
     """
 
@@ -262,5 +281,9 @@ def graph_energy_gradient_centrality(g: object) -> Dict:
 
     nx.set_edge_attributes(g, gradients, 'gradients')
     result = nx.pagerank(g, weight='gradients')
+
+    if normalize:
+        s = sum(result.values())
+        result = { n: v/s for n,v in result.items() }
 
     return result
