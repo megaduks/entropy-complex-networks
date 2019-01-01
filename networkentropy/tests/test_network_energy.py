@@ -64,6 +64,7 @@ class NetworkEnergyTests(unittest.TestCase):
 
         self.assertEqual(expected_sum_centrality, computed_sum_centrality)
 
+
 if __name__ == '__main__':
 
     unittest.main()
