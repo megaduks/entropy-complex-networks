@@ -87,12 +87,13 @@ def unpack_tar_bz2_file(file_name: str, dir_name: str) -> str:
     return output_dir + file_name.replace('.tar.bz2', '/')
 
 
-def build_network_from_out_konect(network_name: str, dir_name: str) -> nx.Graph:
+def build_network_from_out_konect(network_name: str, dir_name: str, max_size: int = None) -> nx.Graph:
     """
     Reads network files stored on disk and builds a proper NetworkX graph object
 
     :param network_name: name of the network to build
     :param dir_name: name of the directory to download files to
+    :param max_size: filter for the maximum number of nodes (avoid building huge networks)
     :return: NetworkX graph object
     """
 
@@ -106,15 +107,21 @@ def build_network_from_out_konect(network_name: str, dir_name: str) -> nx.Graph:
         if os.path.isfile(os.path.join(output_dir, file))
     ]
 
-    out_file = [
-        file
-        for file
-        in files
-        if 'out.' in file
-    ]
+    out_file = next(filter(lambda x: 'out.' in x, files), None)
 
-    assert (len(out_file) > 0), 'No out. file in the directory.'
+    assert (out_file), 'No out. file in the directory.'
 
-    G = nx.read_adjlist(output_dir + out_file[0], comments='%')
+    # check the second line of the file for the number of nodes
+    if max_size:
+        f = open(output_dir + out_file)
+        l = f.readline()
+        l = f.readline()
+
+        num_nodes = int(l.split()[2])
+
+        if num_nodes > max_size:
+            return None
+
+    G = nx.read_adjlist(output_dir + out_file, comments='%')
 
     return G
