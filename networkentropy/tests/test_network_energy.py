@@ -39,28 +39,28 @@ class NetworkEnergyTests(unittest.TestCase):
     def test_randic_centrality_normalization(self):
 
         expected_sum_centrality = 1
-        computed_sum_centrality = sum(network_energy.randic_centrality(self.G, normalize=True).values())
+        computed_sum_centrality = sum(network_energy.randic_centrality(self.G, normalized=True).values())
 
         self.assertEqual(expected_sum_centrality, computed_sum_centrality)
 
     def test_laplacian_centrality_normalization(self):
 
         expected_sum_centrality = 1
-        computed_sum_centrality = sum(network_energy.laplacian_centrality(self.G, normalize=True).values())
+        computed_sum_centrality = sum(network_energy.laplacian_centrality(self.G, normalized=True).values())
 
         self.assertEqual(expected_sum_centrality, computed_sum_centrality)
 
     def test_graph_centrality_normalization(self):
 
         expected_sum_centrality = 1
-        computed_sum_centrality = sum(network_energy.graph_energy_centrality(self.G, normalize=True).values())
+        computed_sum_centrality = sum(network_energy.graph_energy_centrality(self.G, normalized=True).values())
 
         self.assertEqual(expected_sum_centrality, computed_sum_centrality)
 
     def test_gradient_centrality_normalization(self):
 
         expected_sum_centrality = 1
-        computed_sum_centrality = sum(network_energy.gradient_centrality(self.G, normalize=True).values())
+        computed_sum_centrality = sum(network_energy.gradient_centrality(self.G, normalized=True).values())
 
         self.assertEqual(expected_sum_centrality, computed_sum_centrality)
 

@@ -83,20 +83,20 @@ def get_randic_spectrum(g: object, radius: int = 1) -> np.array:
     return np.asarray(result)
 
 
-def randic_centrality(g: object, radius: int = 1, normalize: bool = False):
+def randic_centrality(g: object, radius: int = 1, normalized: bool = False):
     """
     Computes the centrality index for each vertex by computing the Randić energy of that vertex's
     neighborhood of a given radius
 
     :param g: input graph
     :param radius: radius of the egocentric network
-    :param normalize: if True, the result is normalized to sum to 1
+    :param normalized: if True, the result is normalized to sum to 1
     :return: dictionary with Randić energy centrality for each vertex
     """
 
     result = {n: get_randic_energy(nx.ego_graph(G=g, n=n, radius=radius)) for n in g.nodes}
 
-    if normalize:
+    if normalized:
         s = sum(result.values())
         result = { n: v/s for n,v in result.items() }
 
@@ -138,20 +138,20 @@ def get_laplacian_spectrum(g: object, radius: int = 1) -> np.array:
     return np.asarray(result)
 
 
-def laplacian_centrality(g: object, radius: int = 1, normalize: bool = False) -> Dict:
+def laplacian_centrality(g: object, radius: int = 1, normalized: bool = False) -> Dict:
     """
     Computes the centrality index for each vertex by computing the Laplacian energy of that vertex's
     neighborhood of a given radius
 
     :param g: input graph
     :param radius: radius of the egocentric network
-    :param normalize: if True, the result is normalized to sum to 1
+    :param normalized: if True, the result is normalized to sum to 1
     :return: dictionary with Laplacian energy centrality for each vertex
     """
 
     result = {n: get_laplacian_energy(nx.ego_graph(G=g, n=n, radius=radius)) for n in g.nodes}
 
-    if normalize:
+    if normalized:
         s = sum(result.values())
         result = { n: v/s for n,v in result.items() }
 
@@ -189,20 +189,20 @@ def get_graph_spectrum(g: object, radius: int = 1) -> np.array:
     return np.asarray(result)
 
 
-def graph_energy_centrality(g: object, radius: int = 1, normalize: bool = False) -> Dict:
+def graph_energy_centrality(g: object, radius: int = 1, normalized: bool = False) -> Dict:
     """
     Computes the centrality index for each vertex by computing the graph energy of that vertex's
     neighborhood of a given radius
 
     :param g: input graph
     :param radius: radius of the egocentric network
-    :param normalize: if True, the result is normalized to sum to 1
+    :param normalized: if True, the result is normalized to sum to 1
     :return: dictionary with graph energy centrality for each vertex
     """
 
     result = {n: get_graph_energy(nx.ego_graph(G=g, n=n, radius=radius)) for n in g.nodes}
 
-    if normalize:
+    if normalized:
         s = sum(result.values())
         result = { n: v/s for n,v in result.items() }
 
@@ -260,12 +260,12 @@ def get_max_energy_gradient(energy_gradients: Dict) -> List[int]:
     return result
 
 
-def gradient_centrality(g: object, normalize: bool = False, mode: str = 'graph') -> Dict:
+def gradient_centrality(g: object, normalized: bool = False, mode: str = 'graph') -> Dict:
     """
     Computes the stationary distribution of the random walk directed by the gradient of graph energy
 
     :param g: input graph
-    :param normalize: if True, the result is normalized to sum to 1
+    :param normalized: if True, the result is normalized to sum to 1
     :param mode: string representing type of graph energy, possible values include 'graph', 'randic', 'laplacian'
     :return: list of centrality scores for each node
     """
@@ -287,7 +287,7 @@ def gradient_centrality(g: object, normalize: bool = False, mode: str = 'graph')
     nx.set_edge_attributes(g, gradients, 'gradients')
     result = nx.pagerank(g, weight='gradients')
 
-    if normalize:
+    if normalized:
         s = sum(result.values())
         result = { n: v/s for n,v in result.items() }
 
