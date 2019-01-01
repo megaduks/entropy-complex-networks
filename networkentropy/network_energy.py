@@ -84,8 +84,8 @@ def get_randic_spectrum(g: object, radius: int = 1) -> np.array:
     """
 
     result = [
-        get_randic_energy(nx.ego_graph(g, v, radius=radius))
-        for v in g.nodes
+        get_randic_energy(nx.ego_graph(G=g, n=n, radius=radius))
+        for n in g.nodes
     ]
 
     return np.asarray(result)
@@ -101,7 +101,7 @@ def randic_centrality(g: object, radius: int = 1):
     :return: dictionary with Randić energy centrality for each vertex
     """
 
-    result = {n: get_randic_energy(nx.ego_graph(g=g, n=n, radius=radius)) for n in g.nodes}
+    result = {n: get_randic_energy(nx.ego_graph(G=g, n=n, radius=radius)) for n in g.nodes}
     return result
 
 
@@ -132,8 +132,8 @@ def get_laplacian_spectrum(g: object, radius: int = 1) -> np.array:
     """
 
     result = [
-        get_laplacian_energy(nx.ego_graph(g, v, radius=radius))
-        for v in g.nodes
+        get_laplacian_energy(nx.ego_graph(G=g, n=n, radius=radius))
+        for n in g.nodes
     ]
 
     return np.asarray(result)
@@ -149,7 +149,7 @@ def laplacian_centrality(g: object, radius: int = 1) -> Dict:
     :return: dictionary with Laplacian energy centrality for each vertex
     """
 
-    result = {n: get_laplacian_energy(nx.ego_graph(g=g, n=n, radius=radius)) for n in g.nodes}
+    result = {n: get_laplacian_energy(nx.ego_graph(G=g, n=n, radius=radius)) for n in g.nodes}
     return result
 
 
@@ -177,8 +177,8 @@ def get_graph_spectrum(g: object, radius: int = 1) -> np.array:
     """
 
     result = [
-        get_graph_energy(nx.ego_graph(g, v, radius=radius))
-        for v in g.nodes
+        get_graph_energy(nx.ego_graph(G=g, n=n, radius=radius))
+        for n in g.nodes
     ]
 
     return np.asarray(result)
@@ -194,7 +194,7 @@ def graph_energy_centrality(g: object, radius: int = 1) -> Dict:
     :return: dictionary with graph energy centrality for each vertex
     """
 
-    result = {n: get_graph_energy(nx.ego_graph(g=g, n=n, radius=radius)) for n in g.nodes}
+    result = {n: get_graph_energy(nx.ego_graph(G=g, n=n, radius=radius)) for n in g.nodes}
     return result
 
 
@@ -214,7 +214,7 @@ def get_graph_energy_gradients(g: object, energy_dist: List[float] = None) -> Di
         n: {
             nn: energy_dist[n] - energy_dist[nn]
             for nn
-            in nx.ego_graph(g, n)
+            in nx.ego_graph(G=g, n=n)
             if nn != n
         }
         for n
