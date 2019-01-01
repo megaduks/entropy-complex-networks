@@ -37,7 +37,18 @@ class UtilsTests(unittest.TestCase):
         network_name = 'moreno_bison'
         dir_name = '/home/mikolaj/Research/entropy-complex-networks/networkentropy/data/'
 
-        utils.build_network_from_out_konect(network_name=network_name, dir_name=dir_name)
+        g = utils.build_network_from_out_konect(network_name=network_name, dir_name=dir_name)
+
+        self.assertTrue(g.number_of_nodes() > 0)
+
+    def test_build_network_from_out_konect_with_size_limit(self):
+
+        network_name = 'moreno_bison'
+        dir_name = '/home/mikolaj/Research/entropy-complex-networks/networkentropy/data/'
+
+        g = utils.build_network_from_out_konect(network_name=network_name, dir_name=dir_name, max_size=10)
+
+        self.assertTrue(g is None)
 
 
 if __name__ == '__main__':

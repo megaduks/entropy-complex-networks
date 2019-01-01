@@ -47,17 +47,34 @@ def read_avalilable_datasets_konect() -> List[str] :
         ]
 
 
-def download_tsv_dataset_konect(network_name: str, dir_name: str) -> str:
+def download_tsv_dataset_konect(network_name: str, dir_name: str, max_size: int = None) -> str:
     """
     Downloads the compressed network file into local directory
 
     :param network_name: name of the network to download
     :param dir_name: name of the local directory to which the compressed file should be saved
+    :param max_size: maximum number of nodes allowed in the network
     :return: name of the downloaded file
     """
 
     assert (network_name in read_avalilable_datasets_konect()), \
         "No network named: '" + network_name + "' found in Konect!"
+
+    # check the number of nodes in the network
+    base_url = "http://konect.uni-koblenz.de/networks/" + network_name
+    response = requests.get(base_url)
+    html = response.content
+    soup = BeautifulSoup(html, "html5lib")
+    num_nodes = int(soup.find('a', {'title':'Number of nodes'}).
+                    parent.
+                    parent.
+                    nextSibling.
+                    text.split()[0].
+                    replace(',',''))
+
+    if max_size:
+        if num_nodes > max_size:
+            return None
 
     tsv_file = 'http://konect.uni-koblenz.de/downloads/tsv/' + network_name + '.tar.bz2'
     output_file = network_name + '.tar.bz2'
@@ -94,10 +111,15 @@ def build_network_from_out_konect(network_name: str, dir_name: str, max_size: in
     :param network_name: name of the network to build
     :param dir_name: name of the directory to download files to
     :param max_size: filter for the maximum number of nodes (avoid building huge networks)
-    :return: NetworkX graph object
+    :return: NetworkX graph object, or None if the network is too large
     """
 
-    file_name = download_tsv_dataset_konect(network_name=network_name, dir_name=dir_name)
+    file_name = download_tsv_dataset_konect(network_name=network_name, dir_name=dir_name, max_size=max_size)
+
+    # if the size of the network exceeds the limit
+    if not file_name:
+        return None
+
     output_dir = unpack_tar_bz2_file(file_name=file_name, dir_name=dir_name)
 
     files = [
@@ -110,17 +132,6 @@ def build_network_from_out_konect(network_name: str, dir_name: str, max_size: in
     out_file = next(filter(lambda x: 'out.' in x, files), None)
 
     assert (out_file), 'No out. file in the directory.'
-
-    # check the second line of the file for the number of nodes
-    if max_size:
-        f = open(output_dir + out_file)
-        l = f.readline()
-        l = f.readline()
-
-        num_nodes = int(l.split()[2])
-
-        if num_nodes > max_size:
-            return None
 
     G = nx.read_adjlist(output_dir + out_file, comments='%')
 
