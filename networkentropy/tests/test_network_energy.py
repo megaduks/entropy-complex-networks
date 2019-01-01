@@ -57,10 +57,10 @@ class NetworkEnergyTests(unittest.TestCase):
 
         self.assertEqual(expected_sum_centrality, computed_sum_centrality)
 
-    def test_energy_gradient_centrality_normalization(self):
+    def test_gradient_centrality_normalization(self):
 
         expected_sum_centrality = 1
-        computed_sum_centrality = sum(network_energy.graph_energy_gradient_centrality(self.G, normalize=True).values())
+        computed_sum_centrality = sum(network_energy.gradient_centrality(self.G, normalize=True).values())
 
         self.assertEqual(expected_sum_centrality, computed_sum_centrality)
 
