@@ -1,16 +1,13 @@
 from bs4 import BeautifulSoup
+from typing import List
+
 import requests
 import wget
 import tarfile
 import os
 import shutil
-
-from builtins import object
-from typing import Dict, List
 import networkx as nx
 
-# TODO Add filter for the minimum number of nodes (avoid processing of too small networks)
-# TODO Add filter to remove cliques and extremely dense networks
 
 def read_avalilable_datasets_konect() -> List[str] :
     """
@@ -49,20 +46,26 @@ def read_avalilable_datasets_konect() -> List[str] :
         ]
 
 
-def download_tsv_dataset_konect(network_name: str, dir_name: str, max_size: int = None) -> str:
+def download_tsv_dataset_konect(network_name: str,
+                                dir_name: str,
+                                min_size: int = None,
+                                max_size: int = None,
+                                max_density: float = None) -> str:
     """
     Downloads the compressed network file into local directory
 
     :param network_name: name of the network to download
     :param dir_name: name of the local directory to which the compressed file should be saved
+    :param min_size: minimum number of nodes required in the network
     :param max_size: maximum number of nodes allowed in the network
+    :param max_density: maximum density of network allowed
     :return: name of the downloaded file
     """
 
     assert (network_name in read_avalilable_datasets_konect()), \
         "No network named: '" + network_name + "' found in Konect!"
 
-    # check the number of nodes in the network
+    # check the number of nodes and edges in the network
     base_url = "http://konect.uni-koblenz.de/networks/" + network_name
     response = requests.get(base_url)
     html = response.content
@@ -73,9 +76,21 @@ def download_tsv_dataset_konect(network_name: str, dir_name: str, max_size: int 
                     nextSibling.
                     text.split()[0].
                     replace(',',''))
+    num_edges = int(soup.find('a', {'title':'Number of edges'}).
+                    parent.
+                    parent.
+                    nextSibling.
+                    text.split()[0].
+                    replace(',',''))
 
+    if min_size:
+        if num_nodes < min_size:
+            return None
     if max_size:
         if num_nodes > max_size:
+            return None
+    if max_density:
+        if num_edges / (num_nodes * (num_nodes - 1)) > max_density:
             return None
 
     tsv_file = 'http://konect.uni-koblenz.de/downloads/tsv/' + network_name + '.tar.bz2'
@@ -106,19 +121,33 @@ def unpack_tar_bz2_file(file_name: str, dir_name: str) -> str:
     return output_dir + file_name.replace('.tar.bz2', '/')
 
 
-def build_network_from_out_konect(network_name: str, dir_name: str, max_size: int = None) -> nx.Graph:
+def build_network_from_out_konect(network_name: str,
+                                  dir_name: str,
+                                  min_size: int = None,
+                                  max_size: int = None,
+                                  max_density: float = None) -> nx.Graph:
     """
     Reads network files stored on disk and builds a proper NetworkX graph object
 
     :param network_name: name of the network to build
     :param dir_name: name of the directory to download files to
-    :param max_size: filter for the maximum number of nodes (avoid building huge networks)
+    :param min_size: minimum number of nodes required in the network
+    :param max_size: maximum number of nodes allowed in the network
+    :param max_density: maximum density of network allowed
     :return: NetworkX graph object, or None if the network is too large
     """
 
-    file_name = download_tsv_dataset_konect(network_name=network_name, dir_name=dir_name, max_size=max_size)
+    kwargs = {
+        'min_size': min_size,
+        'max_size': max_size,
+        'max_density': max_density
+    }
 
-    # if the size of the network exceeds the limit
+    file_name = download_tsv_dataset_konect(network_name=network_name,
+                                            dir_name=dir_name,
+                                            **kwargs)
+
+    # if one of network parameters exceeds the limit
     if not file_name:
         return None
 
