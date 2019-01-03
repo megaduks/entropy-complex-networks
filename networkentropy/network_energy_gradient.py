@@ -36,7 +36,7 @@ def get_energy_gradient(G1: nx.Graph, G2: nx.Graph, method: str) -> float:
     :return: energy gradient between the two graphs
     """
     get_energy = get_energy_method(method)
-    return __compute_gradient(get_energy(G2), get_energy(G1))
+    return __compute_gradient(get_energy(G1), get_energy(G2))
 
 
 def get_energy_gradient_of_edge(G: nx.Graph, edge: Tuple, method: str, radius: int = 1):
@@ -52,7 +52,7 @@ def get_energy_gradients(G: nx.Graph, method: str, radius: int = 1) -> Dict[Tupl
     return result
 
 
-def get_graph_with_energy_data(G: nx.Graph, methods: Tuple[str], radius: int = 0, copy: bool = True):
+def get_graph_with_energy_data(G: nx.Graph, methods: Tuple, radius: int = 1, copy: bool = True):
     energy_functions = {}
     for m in methods:
         energy_functions[m] = get_energy_method(m)
@@ -63,10 +63,10 @@ def get_graph_with_energy_data(G: nx.Graph, methods: Tuple[str], radius: int = 0
         node2 = edge[1]
         G1 = nx.ego_graph(G, node1, radius=radius)
         G2 = nx.ego_graph(G, node2, radius=radius)
-        for method, get_energy in energy_functions:
+        for method, get_energy in energy_functions.items():
             energyG1 = get_energy(G1)
             energyG2 = get_energy(G2)
             G.node[node1]["{}_energy".format(method)] = energyG1
             G.node[node2]["{}_energy".format(method)] = energyG2
-            G[node1][node2]["{}_gradient"] = __compute_gradient(energyG1, energyG2)
+            G[node1][node2]["{}_gradient".format(method)] = __compute_gradient(energyG1, energyG2)
     return G
