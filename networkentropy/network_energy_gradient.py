@@ -45,10 +45,13 @@ def get_energy_gradient_of_edge(G: nx.Graph, edge: Tuple, method: str, radius: i
     return get_energy_gradient(G1, G2, method)
 
 
-def get_energy_gradients(G: nx.Graph, method: str, radius: int = 1) -> Dict[Tuple, float]:
+def get_energy_gradients(G: nx.Graph, method: str, complete: bool = True, radius: int = 1) -> Dict[Tuple, float]:
     result = {}
     for edge in G.edges:
-        result[edge] = get_energy_gradient_of_edge(G, edge, method, radius)
+        gradient = get_energy_gradient_of_edge(G, edge, method, radius)
+        result[edge] = gradient
+        if complete:
+            result[edge[::-1]] = -gradient
     return result
 
 
