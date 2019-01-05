@@ -47,12 +47,12 @@ def get_graph_with_energy_data(G: nx.Graph, methods: Tuple, radius: int = 1, cop
         G = G.copy()
     for method, get_energy in energy_methods.items():
         energies = get_energy(G, radius)
+        for node, energy in energies.items():
+            G.node[node]["{}_energy".format(method)] = energy
         for edge in G.edges:
             node1 = edge[0]
             node2 = edge[1]
             energyG1 = energies[node1]
             energyG2 = energies[node2]
-            G.node[node1]["{}_energy".format(method)] = energyG1
-            G.node[node2]["{}_energy".format(method)] = energyG2
             G[node1][node2]["{}_gradient".format(method)] = __compute_gradient(energyG1, energyG2)
     return G
