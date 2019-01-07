@@ -26,6 +26,15 @@ def __compute_gradient(energy1: float, energy2: float) -> float:
 
 
 def get_energy_gradients(g: nx.Graph, method: str, complete: bool = True, radius: int = 1) -> Dict[Tuple, float]:
+    """
+    Computes gradient between every two connected nodes.
+
+    :param g: input graph
+    :param method: name of a method for computing graph energy. Possible values are: randic, laplacian, graph
+    :param complete: indicates if the result should contain every pair of connected nodes twice in two orders
+    :param radius: radius of the egocentric network
+    :return: returns Dict with edges ad keys and gradients as values
+    """
     get_energies = get_energy_method(method)
     energies = get_energies(g, radius)
     result = {}
@@ -40,6 +49,17 @@ def get_energy_gradients(g: nx.Graph, method: str, complete: bool = True, radius
 
 
 def get_graph_with_energy_data(g: nx.Graph, methods: Tuple, radius: int = 1, copy: bool = True):
+    """
+    Computes energies and gradients and stores them in a graph as node attributes and edge attributes.
+    Energies are stored in node attributes. The format of attribute names is: <METHOD>_energy
+    Gradients are stored in edge attributes. The format of attribute names is: <METHOD>_gradient
+
+    :param g: input graph
+    :param methods: list of names of methods for computing graph energy. Possible values are: randic, laplacian, graph
+    :param radius: radius of the egocentric network
+    :param copy: if True the input graph in copied, if False the input graph is modified
+    :return: Graph with energies and gradients stored as node and edge attributes
+    """
     energy_methods = {}
     for m in methods:
         energy_methods[m] = get_energy_method(m)
