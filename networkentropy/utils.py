@@ -12,10 +12,10 @@ import networkx as nx
 def read_avalilable_datasets_konect() -> List[str] :
     """
     Reads the list of all networks available through the Koblenz network repository
-    :return: list of network names
+    :return: list of network names and sizes (vertices and edges)
     """
 
-    base_url = "http://konect.uni-koblenz.de/downloads/"
+    base_url = "http://konect.cc/networks/"
     response = requests.get(base_url)
 
     if response.status_code != 200:
@@ -24,30 +24,27 @@ def read_avalilable_datasets_konect() -> List[str] :
         html = response.content
         soup = BeautifulSoup(html, "html5lib")
 
-        table_html = soup.find(id='sort1')
+        table_html = soup.find('table')
         tbody_html = table_html.find('tbody')
         rows = tbody_html.findAll('tr')
 
-        values = [
-            [
-                cell.get('href')
-                for cell
-                in value('a')
-                if 'tsv' in cell.get('href')
-            ]
-            for value
-            in rows
+        networks = [
+            (row.find_all('td')[1].a.get('href').replace('/',''),
+             int(row.find_all('td')[3].text.replace(',','')),
+             int(row.find_all('td')[4].text.strip('\n').replace(',',''))
+             )
+            for row
+            in rows[1:]
+            if row
         ]
 
-        return [
-            val[0].replace('.tar.bz2', '').replace('tsv/', '')
-            for val
-            in values
-        ]
+        return networks
 
 
 def download_tsv_dataset_konect(network_name: str,
                                 dir_name: str,
+                                num_nodes: int = None,
+                                num_edges: int = None,
                                 min_size: int = None,
                                 max_size: int = None,
                                 max_density: float = None) -> str:
@@ -56,32 +53,16 @@ def download_tsv_dataset_konect(network_name: str,
 
     :param network_name: name of the network to download
     :param dir_name: name of the local directory to which the compressed file should be saved
+    :param num_nodes: number of vertices in the network
+    :param num_edges: number of edges in the network
     :param min_size: minimum number of nodes required in the network
     :param max_size: maximum number of nodes allowed in the network
     :param max_density: maximum density of network allowed
     :return: name of the downloaded file
     """
 
-    assert (network_name in read_avalilable_datasets_konect()), \
+    assert (network_name in [name for (name, vsize, esize) in read_avalilable_datasets_konect()]), \
         "No network named: '" + network_name + "' found in Konect!"
-
-    # check the number of nodes and edges in the network
-    base_url = "http://konect.uni-koblenz.de/networks/" + network_name
-    response = requests.get(base_url)
-    html = response.content
-    soup = BeautifulSoup(html, "html5lib")
-    num_nodes = int(soup.find('a', {'title':'Number of nodes'}).
-                    parent.
-                    parent.
-                    nextSibling.
-                    text.split()[0].
-                    replace(',',''))
-    num_edges = int(soup.find('a', {'title':'Number of edges'}).
-                    parent.
-                    parent.
-                    nextSibling.
-                    text.split()[0].
-                    replace(',',''))
 
     if min_size:
         if num_nodes < min_size:
@@ -93,7 +74,7 @@ def download_tsv_dataset_konect(network_name: str,
         if num_edges / (num_nodes * (num_nodes - 1)) > max_density:
             return None
 
-    tsv_file = 'http://konect.uni-koblenz.de/downloads/tsv/' + network_name + '.tar.bz2'
+    tsv_file = 'http://konect.cc/files/download.tsv.' + network_name + '.tar.bz2'
     output_file = network_name + '.tar.bz2'
     file_name = wget.download(tsv_file, out=output_file)
 
@@ -123,6 +104,8 @@ def unpack_tar_bz2_file(file_name: str, dir_name: str) -> str:
 
 def build_network_from_out_konect(network_name: str,
                                   dir_name: str,
+                                  num_nodes: int = None,
+                                  num_edges: int = None,
                                   min_size: int = None,
                                   max_size: int = None,
                                   max_density: float = None) -> nx.Graph:
@@ -131,6 +114,8 @@ def build_network_from_out_konect(network_name: str,
 
     :param network_name: name of the network to build
     :param dir_name: name of the directory to download files to
+    :param num_nodes: number of vertices in the network
+    :param num_edges: number of edges in the network
     :param min_size: minimum number of nodes required in the network
     :param max_size: maximum number of nodes allowed in the network
     :param max_density: maximum density of network allowed
@@ -138,6 +123,8 @@ def build_network_from_out_konect(network_name: str,
     """
 
     kwargs = {
+        'num_nodes': num_nodes,
+        'num_edges': num_edges,
         'min_size': min_size,
         'max_size': max_size,
         'max_density': max_density

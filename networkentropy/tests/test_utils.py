@@ -16,7 +16,7 @@ class UtilsTests(unittest.TestCase):
         
     def test_download_tsv_dataset_konect(self):
 
-        network_name = 'moreno_bison'
+        network_name = 'brunson_south-africa'
         dir_name = '/home/mikolaj/Research/entropy-complex-networks/networkentropy/data/'
 
         utils.download_tsv_dataset_konect(network_name=network_name, dir_name=dir_name)
@@ -25,7 +25,7 @@ class UtilsTests(unittest.TestCase):
 
     def test_unpack_tar_bz2_file(self):
 
-        file_name = 'moreno_bison.tar.bz2'
+        file_name = 'brunson_south-africa.tar.bz2'
         dir_name = '/home/mikolaj/Research/entropy-complex-networks/networkentropy/data/'
 
         utils.unpack_tar_bz2_file(file_name=file_name, dir_name=dir_name)
@@ -34,7 +34,7 @@ class UtilsTests(unittest.TestCase):
 
     def test_build_network_from_out_konect(self):
 
-        network_name = 'moreno_bison'
+        network_name = 'brunson_south-africa'
         dir_name = '/home/mikolaj/Research/entropy-complex-networks/networkentropy/data/'
 
         g = utils.build_network_from_out_konect(network_name=network_name, dir_name=dir_name)
@@ -43,28 +43,40 @@ class UtilsTests(unittest.TestCase):
 
     def test_build_network_from_out_konect_with_min_size_limit(self):
 
-        network_name = 'moreno_bison'
+        network_name = 'brunson_south-africa'
         dir_name = '/home/mikolaj/Research/entropy-complex-networks/networkentropy/data/'
 
-        g = utils.build_network_from_out_konect(network_name=network_name, dir_name=dir_name, min_size=30)
+        g = utils.build_network_from_out_konect(network_name=network_name,
+                                                dir_name=dir_name,
+                                                num_nodes=11,
+                                                num_edges=13,
+                                                min_size=30)
 
         self.assertTrue(g is None)
 
     def test_build_network_from_out_konect_with_max_size_limit(self):
 
-        network_name = 'moreno_bison'
+        network_name = 'brunson_south-africa'
         dir_name = '/home/mikolaj/Research/entropy-complex-networks/networkentropy/data/'
 
-        g = utils.build_network_from_out_konect(network_name=network_name, dir_name=dir_name, max_size=10)
+        g = utils.build_network_from_out_konect(network_name=network_name,
+                                                dir_name=dir_name,
+                                                num_nodes=11,
+                                                num_edges=30,
+                                                max_size=10)
 
         self.assertTrue(g is None)
 
     def test_build_network_from_out_konect_with_max_density_limit(self):
 
-        network_name = 'moreno_bison'
+        network_name = 'brunson_south-africa'
         dir_name = '/home/mikolaj/Research/entropy-complex-networks/networkentropy/data/'
 
-        g = utils.build_network_from_out_konect(network_name=network_name, dir_name=dir_name, max_density=0.1)
+        g = utils.build_network_from_out_konect(network_name=network_name,
+                                                dir_name=dir_name,
+                                                num_nodes=11,
+                                                num_edges=13,
+                                                max_density=0.1)
 
         self.assertTrue(g is None)
 
