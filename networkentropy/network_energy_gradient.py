@@ -31,7 +31,7 @@ def get_energy_gradients(g: nx.Graph, method: str, complete: bool = True, radius
 
     :param g: input graph
     :param method: name of a method for computing graph energy. Possible values are: randic, laplacian, graph
-    :param complete: indicates if the result should contain every pair of connected nodes twice in two orders
+    :param complete: indicates if the result should contain every pair of connected nodes twice (in each order)
     :param radius: radius of the egocentric network
     :return: returns Dict with edges ad keys and gradients as values
     """
