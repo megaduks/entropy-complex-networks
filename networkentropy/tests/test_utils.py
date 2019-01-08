@@ -10,9 +10,9 @@ class UtilsTests(unittest.TestCase):
 
     def test_read_avalilable_datasets_konect(self):
 
-        network_names = utils.read_avalilable_datasets_konect()
+        networks = utils.read_avalilable_datasets_konect()
 
-        self.assertGreater(len(network_names), 0)
+        self.assertGreater(len(networks), 0)
         
     def test_download_tsv_dataset_konect(self):
 

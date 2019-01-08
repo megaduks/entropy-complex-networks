@@ -9,7 +9,7 @@ import shutil
 import networkx as nx
 
 
-def read_avalilable_datasets_konect() -> List[str] :
+def read_avalilable_datasets_konect() -> List[object] :
     """
     Reads the list of all networks available through the Koblenz network repository
     :return: list of network names and sizes (vertices and edges)
@@ -22,14 +22,14 @@ def read_avalilable_datasets_konect() -> List[str] :
         print("An error occurred while getting data.")
     else:
         html = response.content
-        soup = BeautifulSoup(html, "html5lib")
+        soup = BeautifulSoup(html, "lxml")
 
         table_html = soup.find('table')
-        tbody_html = table_html.find('tbody')
-        rows = tbody_html.findAll('tr')
+        rows = table_html.findAll('tr')
 
         networks = [
             (row.find_all('td')[1].a.get('href').replace('/',''),
+             row.find_all('td')[2].div.get('title'),
              int(row.find_all('td')[3].text.replace(',','')),
              int(row.find_all('td')[4].text.strip('\n').replace(',',''))
              )
@@ -61,7 +61,7 @@ def download_tsv_dataset_konect(network_name: str,
     :return: name of the downloaded file
     """
 
-    assert (network_name in [name for (name, vsize, esize) in read_avalilable_datasets_konect()]), \
+    assert (network_name in [name for (name, cat, vsize, esize) in read_avalilable_datasets_konect()]), \
         "No network named: '" + network_name + "' found in Konect!"
 
     if min_size:
