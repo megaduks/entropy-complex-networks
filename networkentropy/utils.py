@@ -8,6 +8,8 @@ import os
 import shutil
 import networkx as nx
 
+from urllib.request import HTTPError
+
 
 def read_avalilable_datasets_konect() -> List[object] :
     """
@@ -76,10 +78,14 @@ def download_tsv_dataset_konect(network_name: str,
 
     tsv_file = 'http://konect.cc/files/download.tsv.' + network_name + '.tar.bz2'
     output_file = network_name + '.tar.bz2'
-    file_name = wget.download(tsv_file, out=output_file)
 
-    if os.path.exists(output_file):
-        shutil.move(file_name, dir_name + output_file)
+    try:
+        file_name = wget.download(tsv_file, out=output_file)
+
+        if os.path.exists(output_file):
+            shutil.move(file_name, dir_name + output_file)
+    except HTTPError:
+        return None
 
     return output_file
 
