@@ -80,6 +80,43 @@ class UtilsTests(unittest.TestCase):
 
         self.assertTrue(g is None)
 
+    def test_precision_at_k_full_coverage(self):
+
+        y_true = [1, 2, 3, 4, 5]
+        y_pred = [1, 2, 3, 8, 9]
+        k = 3
+
+        self.assertEqual(utils.precision_at_k(y_true=y_true, y_pred=y_pred, k=k), 1.0)
+
+    def test_precision_at_k_partial_coverage(self):
+        y_true = [1, 2, 3, 4, 5]
+        y_pred = [1, 2, 3, 8, 9]
+        k = 4
+
+        self.assertEqual(utils.precision_at_k(y_true=y_true, y_pred=y_pred, k=k), 0.75)
+
+    def test_precision_at_k_no_coverage(self):
+        y_true = [1, 2, 3, 4, 5]
+        y_pred = [9, 8, 7, 6, 5]
+        k = 3
+
+        self.assertEqual(utils.precision_at_k(y_true=y_true, y_pred=y_pred, k=k), 0.0)
+
+    def test_precision_at_k_empty_list(self):
+        y_true = [1, 2, 3, 4, 5]
+        y_pred = []
+        k = 3
+
+        self.assertEqual(utils.precision_at_k(y_true=y_true, y_pred=y_pred, k=k), 0.0)
+
+    def test_precision_at_k_no_list(self):
+        y_true = [1, 2, 3, 4, 5]
+        y_pred = None
+        k = 3
+
+        with self.assertRaises(AssertionError):
+            utils.precision_at_k(y_true=y_true, y_pred=y_pred, k=k)
+
 
 if __name__ == '__main__':
 

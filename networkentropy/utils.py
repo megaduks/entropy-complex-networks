@@ -160,3 +160,23 @@ def build_network_from_out_konect(network_name: str,
     G = nx.read_adjlist(output_dir + out_file, comments='%')
 
     return G
+
+
+def precision_at_k(y_true, y_pred, k=1):
+    """
+    Computes precision@k metric for ranking lists
+
+    params:
+    :param y_true: list of real ranking of items
+    :param y_pred: list of predicted ranking of items
+    :param k: cut off value
+
+
+    """
+
+    assert isinstance(k, int), 'k must be an integer'
+    assert (k > 0), 'k must be positive'
+    assert isinstance(y_pred, List), 'y_pred must be a list'
+
+    common = set(y_pred[:k]).intersection(set(y_true[:k]))
+    return len(common) / k
