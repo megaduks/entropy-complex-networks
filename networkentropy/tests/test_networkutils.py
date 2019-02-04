@@ -1,7 +1,7 @@
 import unittest
 import os
 
-from .. import utils
+from .. import network_utils
 
 class UtilsTests(unittest.TestCase):
 
@@ -10,7 +10,7 @@ class UtilsTests(unittest.TestCase):
 
     def test_read_avalilable_datasets_konect(self):
 
-        networks = utils.read_avalilable_datasets_konect()
+        networks = network_utils.read_avalilable_datasets_konect()
 
         self.assertGreater(len(networks), 0)
         
@@ -19,7 +19,7 @@ class UtilsTests(unittest.TestCase):
         network_name = 'brunson_south-africa'
         dir_name = '/home/mikolaj/Research/entropy-complex-networks/networkentropy/data/'
 
-        utils.download_tsv_dataset_konect(network_name=network_name, dir_name=dir_name)
+        network_utils.download_tsv_dataset_konect(network_name=network_name, dir_name=dir_name)
 
         self.assertTrue(os.path.exists(dir_name + network_name + '.tar.bz2'))
 
@@ -28,7 +28,7 @@ class UtilsTests(unittest.TestCase):
         file_name = 'brunson_south-africa.tar.bz2'
         dir_name = '/home/mikolaj/Research/entropy-complex-networks/networkentropy/data/'
 
-        utils.unpack_tar_bz2_file(file_name=file_name, dir_name=dir_name)
+        network_utils.unpack_tar_bz2_file(file_name=file_name, dir_name=dir_name)
 
         self.assertTrue(os.path.exists(dir_name + 'network_' + file_name.replace('.tar.bz2','')))
 
@@ -37,7 +37,7 @@ class UtilsTests(unittest.TestCase):
         network_name = 'brunson_south-africa'
         dir_name = '/home/mikolaj/Research/entropy-complex-networks/networkentropy/data/'
 
-        g = utils.build_network_from_out_konect(network_name=network_name, dir_name=dir_name)
+        g = network_utils.build_network_from_out_konect(network_name=network_name, dir_name=dir_name)
 
         self.assertTrue(g.number_of_nodes() > 0)
 
@@ -46,7 +46,7 @@ class UtilsTests(unittest.TestCase):
         network_name = 'brunson_south-africa'
         dir_name = '/home/mikolaj/Research/entropy-complex-networks/networkentropy/data/'
 
-        g = utils.build_network_from_out_konect(network_name=network_name,
+        g = network_utils.build_network_from_out_konect(network_name=network_name,
                                                 dir_name=dir_name,
                                                 num_nodes=11,
                                                 num_edges=13,
@@ -59,7 +59,7 @@ class UtilsTests(unittest.TestCase):
         network_name = 'brunson_south-africa'
         dir_name = '/home/mikolaj/Research/entropy-complex-networks/networkentropy/data/'
 
-        g = utils.build_network_from_out_konect(network_name=network_name,
+        g = network_utils.build_network_from_out_konect(network_name=network_name,
                                                 dir_name=dir_name,
                                                 num_nodes=11,
                                                 num_edges=30,
@@ -72,7 +72,7 @@ class UtilsTests(unittest.TestCase):
         network_name = 'brunson_south-africa'
         dir_name = '/home/mikolaj/Research/entropy-complex-networks/networkentropy/data/'
 
-        g = utils.build_network_from_out_konect(network_name=network_name,
+        g = network_utils.build_network_from_out_konect(network_name=network_name,
                                                 dir_name=dir_name,
                                                 num_nodes=11,
                                                 num_edges=13,
@@ -86,28 +86,28 @@ class UtilsTests(unittest.TestCase):
         y_pred = [1, 2, 3, 8, 9]
         k = 3
 
-        self.assertEqual(utils.precision_at_k(y_true=y_true, y_pred=y_pred, k=k), 1.0)
+        self.assertEqual(network_utils.precision_at_k(y_true=y_true, y_pred=y_pred, k=k), 1.0)
 
     def test_precision_at_k_partial_coverage(self):
         y_true = [1, 2, 3, 4, 5]
         y_pred = [1, 2, 3, 8, 9]
         k = 4
 
-        self.assertEqual(utils.precision_at_k(y_true=y_true, y_pred=y_pred, k=k), 0.75)
+        self.assertEqual(network_utils.precision_at_k(y_true=y_true, y_pred=y_pred, k=k), 0.75)
 
     def test_precision_at_k_no_coverage(self):
         y_true = [1, 2, 3, 4, 5]
         y_pred = [9, 8, 7, 6, 5]
         k = 3
 
-        self.assertEqual(utils.precision_at_k(y_true=y_true, y_pred=y_pred, k=k), 0.0)
+        self.assertEqual(network_utils.precision_at_k(y_true=y_true, y_pred=y_pred, k=k), 0.0)
 
     def test_precision_at_k_empty_list(self):
         y_true = [1, 2, 3, 4, 5]
         y_pred = []
         k = 3
 
-        self.assertEqual(utils.precision_at_k(y_true=y_true, y_pred=y_pred, k=k), 0.0)
+        self.assertEqual(network_utils.precision_at_k(y_true=y_true, y_pred=y_pred, k=k), 0.0)
 
     def test_precision_at_k_no_list(self):
         y_true = [1, 2, 3, 4, 5]
@@ -115,7 +115,7 @@ class UtilsTests(unittest.TestCase):
         k = 3
 
         with self.assertRaises(AssertionError):
-            utils.precision_at_k(y_true=y_true, y_pred=y_pred, k=k)
+            network_utils.precision_at_k(y_true=y_true, y_pred=y_pred, k=k)
 
 
 if __name__ == '__main__':
