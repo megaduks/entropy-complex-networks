@@ -10,6 +10,8 @@ import networkx as nx
 
 from urllib.request import HTTPError
 
+# TODO: add option to download more detailed characteristics of networks
+#       e.g., if these are signed, directed, undirected, multimodal, etc.
 
 def read_avalilable_datasets_konect() -> List[object] :
     """
