@@ -11,7 +11,7 @@ import networkx as nx
 from urllib.request import HTTPError
 
 
-def read_avalilable_datasets_konect() -> List[object] :
+def read_available_datasets_konect() -> List[object]:
     """
     Reads the list of all networks available through the Koblenz network repository
     :return: list of network names and sizes (vertices and edges)
@@ -30,10 +30,10 @@ def read_avalilable_datasets_konect() -> List[object] :
         rows = table_html.findAll('tr')
 
         networks = [
-            (row.find_all('td')[1].a.get('href').replace('/',''),
+            (row.find_all('td')[1].a.get('href').replace('/', ''),
              row.find_all('td')[2].div.get('title'),
-             int(row.find_all('td')[3].text.replace(',','')),
-             int(row.find_all('td')[4].text.strip('\n').replace(',',''))
+             int(row.find_all('td')[3].text.replace(',', '')),
+             int(row.find_all('td')[4].text.strip('\n').replace(',', ''))
              )
             for row
             in rows[1:]
@@ -63,7 +63,7 @@ def download_tsv_dataset_konect(network_name: str,
     :return: name of the downloaded file
     """
 
-    assert (network_name in [name for (name, cat, vsize, esize) in read_avalilable_datasets_konect()]), \
+    assert (network_name in [name for (name, cat, vsize, esize) in read_available_datasets_konect()]), \
         "No network named: '" + network_name + "' found in Konect!"
 
     if min_size:
