@@ -12,19 +12,19 @@ import pandas as pd
 import copy
 from bs4 import BeautifulSoup
 
-NAME = "name"
-CATEGORY = "category"
-NUM_NODES = "num_nodes"
-NUM_EDGES = "num_edges"
-TSV_URL = "tsv_url"
+NAME = 'name'
+CATEGORY = 'category'
+NUM_NODES = 'num_nodes'
+NUM_EDGES = 'num_edges'
+TSV_URL = 'tsv_url'
 
 
 class DatasetsStrategy:
     def get_networks_url(self) -> str:
-        raise NotImplementedError("Method get_networks_url must be implemented")
+        raise NotImplementedError('Method get_networks_url must be implemented')
 
     def get_networks_from_response(self, response) -> List[object]:
-        raise NotImplementedError("Method get_networks_from_response must be implemented")
+        raise NotImplementedError('Method get_networks_from_response must be implemented')
 
 
 class Datasets:
@@ -34,7 +34,7 @@ class Datasets:
 
         response = self._request_networks()
         if response.status_code != 200:
-            print("An error occurred while getting data.")
+            print('An error occurred while getting data.')
         else:
             networks = self._get_networks_from_response(response)
             self.networks = self._map_to_dataframe(networks)
@@ -98,7 +98,7 @@ class Datasets:
         elif combine_queries:
             query_expr = self._build_query(categories, min_size, max_size, min_density, max_density, query_expr)
         if not query_expr:
-            raise ValueError("Either query_expr or other filtering parameter must be specified")
+            raise ValueError('Either query_expr or other filtering parameter must be specified')
         if inplace:
             datasets = self
         else:
@@ -109,29 +109,29 @@ class Datasets:
     def _build_query(self, categories, min_size, max_size, min_density, max_density, base_query=None) -> str:
         query = []
         if base_query is not None:
-            query.append("({})".format(base_query))
+            query.append('({})'.format(base_query))
         if categories is not None:
-            query.append("{} in @categories".format(CATEGORY))
+            query.append('{} in @categories'.format(CATEGORY))
         if min_size is not None:
-            query.append("{} >= @min_size".format(NUM_NODES))
+            query.append('{} >= @min_size'.format(NUM_NODES))
         if max_size is not None:
-            query.append("{} <= @max_size".format(NUM_NODES))
+            query.append('{} <= @max_size'.format(NUM_NODES))
         if min_density is not None:
-            query.append("({m} / ({n} * ({n} - 1))) >= @min_density".format(m=NUM_EDGES, n=NUM_NODES))
+            query.append('({m} / ({n} * ({n} - 1))) >= @min_density'.format(m=NUM_EDGES, n=NUM_NODES))
         if max_density is not None:
-            query.append("({m} / ({n} * ({n} - 1))) <= @max_density".format(m=NUM_EDGES, n=NUM_NODES))
-        return " and ".join(query)
+            query.append('({m} / ({n} * ({n} - 1))) <= @max_density'.format(m=NUM_EDGES, n=NUM_NODES))
+        return ' and '.join(query)
 
 
 class KonectCCStrategy(DatasetsStrategy):
-    networks_url = "http://konect.cc/networks/"
+    networks_url = 'http://konect.cc/networks/'
 
     def get_networks_url(self) -> str:
         return self.networks_url
 
     def get_networks_from_response(self, response) -> List[object]:
         html = response.content
-        soup = BeautifulSoup(html, "lxml")
+        soup = BeautifulSoup(html, 'lxml')
 
         table_html = soup.find('table')
         rows = table_html.findAll('tr')
@@ -148,15 +148,24 @@ class KonectCCStrategy(DatasetsStrategy):
         return networks
 
 
+class KonectUniStrategy(DatasetsStrategy):
+
+    def get_networks_url(self) -> str:
+        return 'http://konect.uni-koblenz.de/networks/'
+
+    def get_networks_from_response(self, response) -> List[object]:
+        pass
+
+
 def create_datasets(name):
-    if name == "konect.cc":
+    if name == 'konect.cc':
         strategy = KonectCCStrategy()
     else:
-        raise ValueError("Strategy with {} does not exist".format(name))
+        raise ValueError('Strategy with {} does not exist'.format(name))
     return Datasets(strategy)
 
 
-def read_available_datasets_konect(name="konect.cc") -> List[object]:
+def read_available_datasets_konect(name='konect.cc') -> List[object]:
     datasets = create_datasets(name)
     return datasets.to_list()
 
@@ -194,8 +203,8 @@ def unpack_tar_bz2_file(file_name: str, dir_name: str) -> str:
     :return: name of the directory where unpacked files are
     """
 
-    tar = tarfile.open(dir_name + file_name, "r:bz2")
-    output_dir = dir_name + "network_" + file_name.replace('.tar.bz2', '') + "/"
+    tar = tarfile.open(dir_name + file_name, 'r:bz2')
+    output_dir = dir_name + 'network_' + file_name.replace('.tar.bz2', '') + '/'
 
     tar.extractall(output_dir)
     tar.close()
