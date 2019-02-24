@@ -7,36 +7,92 @@ from urllib.request import HTTPError
 import networkx as nx
 import requests
 import wget
+import pandas as pd
 from bs4 import BeautifulSoup
+
+NAME = "name"
+CATEGORY = "category"
+NUM_NODES = "num_nodes"
+NUM_EDGES = "num_edges"
+
+
+class DatasetsStrategy:
+    def get_networks_url(self) -> str:
+        raise NotImplementedError("Method get_networks_url must be implemented")
+
+    def get_networks_from_response(self, response) -> List[object]:
+        raise NotImplementedError("Method get_networks_from_response must be implemented")
 
 
 class Datasets:
-    def list(self):
-        result = None
+    def __init__(self, datasets_strategy: DatasetsStrategy):
+        self.datasets_strategy = datasets_strategy
+        self.networks = pd.DataFrame()
+
         response = self._request_networks()
         if response.status_code != 200:
             print("An error occurred while getting data.")
         else:
-            result = self._get_networks_from_response(response)
-        return result
+            networks = self._get_networks_from_response(response)
+            self.networks = self._map_to_dataframe(networks)
 
     def _request_networks(self):
         return requests.get(self._get_networks_url())
 
     def _get_networks_url(self):
-        raise NotImplementedError("Method _get_networks_url must be implemented")
+        return self.datasets_strategy.get_networks_url()
 
     def _get_networks_from_response(self, response):
-        raise NotImplementedError("Method _get_networks_from_response must be implemented")
+        return self.datasets_strategy.get_networks_from_response(response)
+
+    def _map_to_dataframe(self, networks) -> pd.DataFrame:
+        transposed_networks = list(map(list, zip(*networks)))
+        return pd.DataFrame(data={
+            NAME: transposed_networks[0],
+            CATEGORY: transposed_networks[1],
+            NUM_NODES: transposed_networks[2],
+            NUM_EDGES: transposed_networks[3]
+        })
+
+    def to_list(self) -> List[object]:
+        return self.networks.values.tolist()
+
+    def filter(self,
+               inplace: bool = False,
+               query_expr: str = None,
+               categories: List[str] = None,
+               min_size: int = None,
+               max_size: int = None,
+               min_density: int = None,
+               max_density: float = None) -> pd.DataFrame:
+        if query_expr is None:
+            query_expr = self._build_query(categories, min_size, max_size, min_density, max_density)
+        if not query_expr:
+            raise ValueError("Either query_expr or other filtering parameter must be specified")
+        return self.networks.query(query_expr, inplace=inplace)
+
+    def _build_query(self, categories, min_size, max_size, min_density, max_density) -> str:
+        query = []
+        if categories is not None:
+            query.append("{} in @categories".format(CATEGORY))
+        if min_size is not None:
+            query.append("{} >= @min_size".format(NUM_NODES))
+        if max_size is not None:
+            query.append("{} <= @max_size".format(NUM_NODES))
+        if min_density is not None:
+            query.append("({m} / ({n} * ({n} - 1))) >= @min_density".format(m=NUM_EDGES, n=NUM_NODES))
+        if max_density is not None:
+            query.append("({m} / ({n} * ({n} - 1))) <= @max_density".format(m=NUM_EDGES, n=NUM_NODES))
+        return " and ".join(query)
 
 
-class DatasetsKonnctCC(Datasets):
+class KonnctCCStrategy(DatasetsStrategy):
     networks_url = "http://konect.cc/networks/"
 
-    def _get_networks_url(self):
+    def get_networks_url(self) -> str:
         return self.networks_url
 
-    def _get_networks_from_response(self, response):
+    def get_networks_from_response(self, response) -> List[object]:
         html = response.content
         soup = BeautifulSoup(html, "lxml")
 
@@ -58,12 +114,15 @@ class DatasetsKonnctCC(Datasets):
 
 def create_datasets(name):
     if name == "konect.cc":
-        return DatasetsKonnctCC()
+        strategy = KonnctCCStrategy()
+    else:
+        raise ValueError("Strategy with {} does not exist".format(name))
+    return Datasets(strategy)
 
 
 def read_available_datasets_konect(name="konect.cc") -> List[object]:
     datasets = create_datasets(name)
-    return datasets.list()
+    return datasets.to_list()
 
 
 def download_tsv_dataset_konect(network_name: str,
