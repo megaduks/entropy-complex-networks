@@ -8,6 +8,7 @@ import networkx as nx
 import requests
 import wget
 import pandas as pd
+import copy
 from bs4 import BeautifulSoup
 
 NAME = "name"
@@ -54,8 +55,19 @@ class Datasets:
             NUM_EDGES: transposed_networks[3]
         })
 
-    def to_list(self) -> List[object]:
+    def to_list(self) -> List[List[object]]:
+        """
+        Returns datasets information as list
+        :return: datasets information as list
+        """
         return self.networks.values.tolist()
+
+    def to_df(self) -> pd.DataFrame:
+        """
+        Returns datasets information as DataFrame
+        :return: datasets information as DataFrame
+        """
+        return self.networks
 
     def filter(self,
                inplace: bool = False,
@@ -64,12 +76,27 @@ class Datasets:
                min_size: int = None,
                max_size: int = None,
                min_density: int = None,
-               max_density: float = None) -> pd.DataFrame:
+               max_density: float = None) -> 'Datasets':
+        """
+        :param inplace: specifies whether Dataset should be modified or a modified copy should be returned
+        :param query_expr: query expression, if specified, other arguments are ignored
+        :param categories: categories to be included
+        :param min_size: minimum number of nodes required in the network
+        :param max_size: maximum number of nodes allowed in the network
+        :param min_density: minimum density of network allowed
+        :param max_density: maximum density of network allowed
+        :return: Modified Datasets object
+        """
         if query_expr is None:
             query_expr = self._build_query(categories, min_size, max_size, min_density, max_density)
         if not query_expr:
             raise ValueError("Either query_expr or other filtering parameter must be specified")
-        return self.networks.query(query_expr, inplace=inplace)
+        if inplace:
+            datasets = self
+        else:
+            datasets = copy.deepcopy(self)
+        datasets.networks.query(query_expr, inplace=True)
+        return datasets
 
     def _build_query(self, categories, min_size, max_size, min_density, max_density) -> str:
         query = []
