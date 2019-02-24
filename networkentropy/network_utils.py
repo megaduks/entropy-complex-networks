@@ -72,14 +72,17 @@ class Datasets:
     def filter(self,
                inplace: bool = False,
                query_expr: str = None,
+               combine_queries: bool = False,
                categories: List[str] = None,
                min_size: int = None,
                max_size: int = None,
                min_density: int = None,
                max_density: float = None) -> 'Datasets':
         """
-        :param inplace: specifies whether Dataset should be modified or a modified copy should be returned
-        :param query_expr: query expression, if specified, other arguments are ignored
+        Filters datasets
+        :param inplace: specifies whether Dataset should be modified or a modified copy should be returned (default is False)
+        :param query_expr: query expression, if specified and combine is False, other arguments are ignored
+        :param combine_queries: specifies whether query_expr should be combined with other conditions (default is False)
         :param categories: categories to be included
         :param min_size: minimum number of nodes required in the network
         :param max_size: maximum number of nodes allowed in the network
@@ -89,6 +92,8 @@ class Datasets:
         """
         if query_expr is None:
             query_expr = self._build_query(categories, min_size, max_size, min_density, max_density)
+        elif combine_queries:
+            query_expr = self._build_query(categories, min_size, max_size, min_density, max_density, query_expr)
         if not query_expr:
             raise ValueError("Either query_expr or other filtering parameter must be specified")
         if inplace:
@@ -98,8 +103,10 @@ class Datasets:
         datasets.networks.query(query_expr, inplace=True)
         return datasets
 
-    def _build_query(self, categories, min_size, max_size, min_density, max_density) -> str:
+    def _build_query(self, categories, min_size, max_size, min_density, max_density, base_query=None) -> str:
         query = []
+        if base_query is not None:
+            query.append("({})".format(base_query))
         if categories is not None:
             query.append("{} in @categories".format(CATEGORY))
         if min_size is not None:
@@ -113,7 +120,7 @@ class Datasets:
         return " and ".join(query)
 
 
-class KonnctCCStrategy(DatasetsStrategy):
+class KonectCCStrategy(DatasetsStrategy):
     networks_url = "http://konect.cc/networks/"
 
     def get_networks_url(self) -> str:
@@ -141,7 +148,7 @@ class KonnctCCStrategy(DatasetsStrategy):
 
 def create_datasets(name):
     if name == "konect.cc":
-        strategy = KonnctCCStrategy()
+        strategy = KonectCCStrategy()
     else:
         raise ValueError("Strategy with {} does not exist".format(name))
     return Datasets(strategy)
@@ -152,38 +159,17 @@ def read_available_datasets_konect(name="konect.cc") -> List[object]:
     return datasets.to_list()
 
 
-def download_tsv_dataset_konect(network_name: str,
-                                dir_name: str,
-                                num_nodes: int = None,
-                                num_edges: int = None,
-                                min_size: int = None,
-                                max_size: int = None,
-                                max_density: float = None) -> str:
+def download_tsv_dataset_konect(network_name: str, dir_name: str) -> str:
     """
     Downloads the compressed network file into local directory
 
     :param network_name: name of the network to download
     :param dir_name: name of the local directory to which the compressed file should be saved
-    :param num_nodes: number of vertices in the network
-    :param num_edges: number of edges in the network
-    :param min_size: minimum number of nodes required in the network
-    :param max_size: maximum number of nodes allowed in the network
-    :param max_density: maximum density of network allowed
     :return: name of the downloaded file
     """
 
     assert (network_name in [name for (name, cat, vsize, esize) in read_available_datasets_konect()]), \
         "No network named: '" + network_name + "' found in Konect!"
-
-    if min_size:
-        if num_nodes < min_size:
-            return None
-    if max_size:
-        if num_nodes > max_size:
-            return None
-    if max_density:
-        if num_edges / (num_nodes * (num_nodes - 1)) > max_density:
-            return None
 
     tsv_file = 'http://konect.cc/files/download.tsv.' + network_name + '.tar.bz2'
     output_file = network_name + '.tar.bz2'
@@ -219,39 +205,18 @@ def unpack_tar_bz2_file(file_name: str, dir_name: str) -> str:
     return output_dir + file_name.replace('.tar.bz2', '/')
 
 
-def build_network_from_out_konect(network_name: str,
-                                  dir_name: str,
-                                  num_nodes: int = None,
-                                  num_edges: int = None,
-                                  min_size: int = None,
-                                  max_size: int = None,
-                                  max_density: float = None) -> nx.Graph:
+def build_network_from_out_konect(network_name: str, dir_name: str) -> nx.Graph:
     """
     Reads network files stored on disk and builds a proper NetworkX graph object
 
     :param network_name: name of the network to build
     :param dir_name: name of the directory to download files to
-    :param num_nodes: number of vertices in the network
-    :param num_edges: number of edges in the network
-    :param min_size: minimum number of nodes required in the network
-    :param max_size: maximum number of nodes allowed in the network
-    :param max_density: maximum density of network allowed
     :return: NetworkX graph object, or None if the network is too large
     """
-
-    kwargs = {
-        'num_nodes': num_nodes,
-        'num_edges': num_edges,
-        'min_size': min_size,
-        'max_size': max_size,
-        'max_density': max_density
-    }
-
     file_name = download_tsv_dataset_konect(network_name=network_name,
-                                            dir_name=dir_name,
-                                            **kwargs)
+                                            dir_name=dir_name)
 
-    # if one of network parameters exceeds the limit
+    # network could not be downloaded
     if not file_name:
         return None
 
