@@ -1,6 +1,7 @@
 import os
 import shutil
 import tarfile
+from collections import OrderedDict
 from typing import List
 from urllib.request import HTTPError
 
@@ -15,6 +16,7 @@ NAME = "name"
 CATEGORY = "category"
 NUM_NODES = "num_nodes"
 NUM_EDGES = "num_edges"
+TSV_URL = "tsv_url"
 
 
 class DatasetsStrategy:
@@ -48,12 +50,13 @@ class Datasets:
 
     def _map_to_dataframe(self, networks) -> pd.DataFrame:
         transposed_networks = list(map(list, zip(*networks)))
-        return pd.DataFrame(data={
-            NAME: transposed_networks[0],
-            CATEGORY: transposed_networks[1],
-            NUM_NODES: transposed_networks[2],
-            NUM_EDGES: transposed_networks[3]
-        })
+        return pd.DataFrame(data=OrderedDict([
+            (NAME, transposed_networks[0]),
+            (CATEGORY, transposed_networks[1]),
+            (NUM_NODES, transposed_networks[2]),
+            (NUM_EDGES, transposed_networks[3]),
+            (TSV_URL, transposed_networks[4])
+        ]))
 
     def to_list(self) -> List[List[object]]:
         """
@@ -133,16 +136,15 @@ class KonectCCStrategy(DatasetsStrategy):
         table_html = soup.find('table')
         rows = table_html.findAll('tr')
 
-        networks = [
-            (row.find_all('td')[1].a.get('href').replace('/', ''),
-             row.find_all('td')[2].div.get('title'),
-             int(row.find_all('td')[3].text.replace(',', '')),
-             int(row.find_all('td')[4].text.strip('\n').replace(',', ''))
-             )
-            for row
-            in rows[1:]
-            if row
-        ]
+        networks = []
+        for row in rows[1:]:
+            if row:
+                name = row.find_all('td')[1].a.get('href').replace('/', '')
+                networks.append((name,
+                                 row.find_all('td')[2].div.get('title'),
+                                 int(row.find_all('td')[3].text.replace(',', '')),
+                                 int(row.find_all('td')[4].text.strip('\n').replace(',', '')),
+                                 'http://konect.cc/files/download.tsv.{}.tar.bz2'.format(name)))
         return networks
 
 
@@ -159,23 +161,19 @@ def read_available_datasets_konect(name="konect.cc") -> List[object]:
     return datasets.to_list()
 
 
-def download_tsv_dataset_konect(network_name: str, dir_name: str) -> str:
+def download_tsv_dataset_konect(network_name: str, tsv_url: str, dir_name: str) -> str:
     """
     Downloads the compressed network file into local directory
 
     :param network_name: name of the network to download
+    :param tsv_url: url to network data as tsv
     :param dir_name: name of the local directory to which the compressed file should be saved
     :return: name of the downloaded file
     """
-
-    assert (network_name in [name for (name, cat, vsize, esize) in read_available_datasets_konect()]), \
-        "No network named: '" + network_name + "' found in Konect!"
-
-    tsv_file = 'http://konect.cc/files/download.tsv.' + network_name + '.tar.bz2'
     output_file = network_name + '.tar.bz2'
 
     try:
-        file_name = wget.download(tsv_file, out=output_file)
+        file_name = wget.download(tsv_url, out=output_file)
 
         if not os.path.exists(dir_name):
             os.mkdir(dir_name)
@@ -205,15 +203,17 @@ def unpack_tar_bz2_file(file_name: str, dir_name: str) -> str:
     return output_dir + file_name.replace('.tar.bz2', '/')
 
 
-def build_network_from_out_konect(network_name: str, dir_name: str) -> nx.Graph:
+def build_network_from_out_konect(network_name: str, tsv_url: str, dir_name: str) -> nx.Graph:
     """
     Reads network files stored on disk and builds a proper NetworkX graph object
 
     :param network_name: name of the network to build
+    :param tsv_url: url to network data as tsv
     :param dir_name: name of the directory to download files to
     :return: NetworkX graph object, or None if the network is too large
     """
     file_name = download_tsv_dataset_konect(network_name=network_name,
+                                            tsv_url=tsv_url,
                                             dir_name=dir_name)
 
     # network could not be downloaded
