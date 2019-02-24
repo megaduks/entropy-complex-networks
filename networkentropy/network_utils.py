@@ -1,28 +1,42 @@
-from bs4 import BeautifulSoup
-from typing import List
-
-import requests
-import wget
-import tarfile
 import os
 import shutil
-import networkx as nx
-
+import tarfile
+from typing import List
 from urllib.request import HTTPError
 
+import networkx as nx
+import requests
+import wget
+from bs4 import BeautifulSoup
 
-def read_available_datasets_konect() -> List[object]:
-    """
-    Reads the list of all networks available through the Koblenz network repository
-    :return: list of network names and sizes (vertices and edges)
-    """
 
-    base_url = "http://konect.cc/networks/"
-    response = requests.get(base_url)
+class Datasets:
+    def list(self):
+        result = None
+        response = self._request_networks()
+        if response.status_code != 200:
+            print("An error occurred while getting data.")
+        else:
+            result = self._get_networks_from_response(response)
+        return result
 
-    if response.status_code != 200:
-        print("An error occurred while getting data.")
-    else:
+    def _request_networks(self):
+        return requests.get(self._get_networks_url())
+
+    def _get_networks_url(self):
+        raise NotImplementedError("Method _get_networks_url must be implemented")
+
+    def _get_networks_from_response(self, response):
+        raise NotImplementedError("Method _get_networks_from_response must be implemented")
+
+
+class DatasetsKonnctCC(Datasets):
+    networks_url = "http://konect.cc/networks/"
+
+    def _get_networks_url(self):
+        return self.networks_url
+
+    def _get_networks_from_response(self, response):
         html = response.content
         soup = BeautifulSoup(html, "lxml")
 
@@ -39,8 +53,17 @@ def read_available_datasets_konect() -> List[object]:
             in rows[1:]
             if row
         ]
-
         return networks
+
+
+def create_datasets(name):
+    if name == "konect.cc":
+        return DatasetsKonnctCC()
+
+
+def read_available_datasets_konect(name="konect.cc") -> List[object]:
+    datasets = create_datasets(name)
+    return datasets.list()
 
 
 def download_tsv_dataset_konect(network_name: str,
@@ -82,6 +105,8 @@ def download_tsv_dataset_konect(network_name: str,
     try:
         file_name = wget.download(tsv_file, out=output_file)
 
+        if not os.path.exists(dir_name):
+            os.mkdir(dir_name)
         if os.path.exists(output_file):
             shutil.move(file_name, dir_name + output_file)
     except HTTPError:
