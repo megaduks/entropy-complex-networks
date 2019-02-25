@@ -37,7 +37,7 @@ class Datasets:
             print('An error occurred while getting data.')
         else:
             networks = self._get_networks_from_response(response)
-            self.networks = self._map_to_dataframe(networks)
+            self.networks = self._map_to_df(networks)
 
     def _request_networks(self):
         return requests.get(self._get_networks_url())
@@ -48,7 +48,8 @@ class Datasets:
     def _get_networks_from_response(self, response):
         return self.datasets_strategy.get_networks_from_response(response)
 
-    def _map_to_dataframe(self, networks) -> pd.DataFrame:
+    @staticmethod
+    def _map_to_df(networks) -> pd.DataFrame:
         transposed_networks = list(map(list, zip(*networks)))
         return pd.DataFrame(data=OrderedDict([
             (NAME, transposed_networks[0]),
@@ -80,7 +81,8 @@ class Datasets:
                min_size: int = None,
                max_size: int = None,
                min_density: int = None,
-               max_density: float = None) -> 'Datasets':
+               max_density: float = None,
+               only_downloadable: bool = True) -> 'Datasets':
         """
         Filters datasets
         :param inplace: specifies whether Dataset should be modified or a modified copy should be returned (default is False)
@@ -91,22 +93,25 @@ class Datasets:
         :param max_size: maximum number of nodes allowed in the network
         :param min_density: minimum density of network allowed
         :param max_density: maximum density of network allowed
+        :param only_downloadable: if True, only datasets available to download will be included
         :return: Modified Datasets object
         """
+        args = [categories, min_size, max_size, min_density, max_density, only_downloadable]
         if query_expr is None:
-            query_expr = self._build_query(categories, min_size, max_size, min_density, max_density)
+            query_expr = self._build_query(*args)
         elif combine_queries:
-            query_expr = self._build_query(categories, min_size, max_size, min_density, max_density, query_expr)
-        if not query_expr:
-            raise ValueError('Either query_expr or other filtering parameter must be specified')
+            query_expr = self._build_query(*args, query_expr)
         if inplace:
             datasets = self
         else:
             datasets = copy.deepcopy(self)
-        datasets.networks.query(query_expr, inplace=True)
+        if query_expr:
+            datasets.networks.query(query_expr, inplace=True)
         return datasets
 
-    def _build_query(self, categories, min_size, max_size, min_density, max_density, base_query=None) -> str:
+    @staticmethod
+    def _build_query(categories, min_size, max_size, min_density, max_density, only_downloadable,
+                     base_query=None) -> str:
         query = []
         if base_query is not None:
             query.append('({})'.format(base_query))
@@ -120,6 +125,9 @@ class Datasets:
             query.append('({m} / ({n} * ({n} - 1))) >= @min_density'.format(m=NUM_EDGES, n=NUM_NODES))
         if max_density is not None:
             query.append('({m} / ({n} * ({n} - 1))) <= @max_density'.format(m=NUM_EDGES, n=NUM_NODES))
+        if only_downloadable:
+            # using the fact that NaN != NaN, somehow iot works for None values in queries as well
+            query.append('{url} == {url}'.format(url=TSV_URL))
         return ' and '.join(query)
 
 
@@ -139,13 +147,22 @@ class KonectCCStrategy(DatasetsStrategy):
         networks = []
         for row in rows[1:]:
             if row:
-                name = row.find_all('td')[1].a.get('href').replace('/', '')
+                tds = row.find_all('td')
+                name = tds[1].a.get('href').replace('/', '')
+                tsv_url = self._get_tsv_url(name, tds)
                 networks.append((name,
-                                 row.find_all('td')[2].div.get('title'),
-                                 int(row.find_all('td')[3].text.replace(',', '')),
-                                 int(row.find_all('td')[4].text.strip('\n').replace(',', '')),
-                                 'http://konect.cc/files/download.tsv.{}.tar.bz2'.format(name)))
+                                 tds[2].div.get('title'),
+                                 int(tds[3].text.replace(',', '')),
+                                 int(tds[4].text.strip('\n').replace(',', '')),
+                                 tsv_url))
         return networks
+
+    def _get_tsv_url(self, name, tds):
+        download_icon_title = tds[2].img.get('title')
+        if 'is not available' in download_icon_title:
+            return None
+        else:
+            return 'http://konect.cc/files/download.tsv.{}.tar.bz2'.format(name)
 
 
 class KonectUniStrategy(DatasetsStrategy):
@@ -154,14 +171,41 @@ class KonectUniStrategy(DatasetsStrategy):
         return 'http://konect.uni-koblenz.de/networks/'
 
     def get_networks_from_response(self, response) -> List[object]:
-        pass
+        html = response.content
+        soup = BeautifulSoup(html, 'lxml')
+
+        table_html = soup.find('table')
+        rows = table_html.tbody.find_all('tr')
+
+        networks = []
+        for row in rows:
+            if row:
+                tds = row.find_all('td')
+                tsv_url = self._get_tsv_url(tds)
+                networks.append((tds[1].a.get('href').replace('/', ''),
+                                 tds[2].span.text,
+                                 int(tds[6].text.replace(',', '')),
+                                 int(tds[7].text.replace(',', '')),
+                                 tsv_url))
+        return networks
+
+    @staticmethod
+    def _get_tsv_url(tds):
+        a = tds[8].find_all('div')[1].a
+        if a is not None:
+            relative_url = a.get('href').replace('../', '')
+            return 'http://konect.uni-koblenz.de/{}'.format(relative_url)
+        else:
+            return None
 
 
 def create_datasets(name):
     if name == 'konect.cc':
         strategy = KonectCCStrategy()
+    elif name == "konect.uni":
+        strategy = KonectUniStrategy()
     else:
-        raise ValueError('Strategy with {} does not exist'.format(name))
+        raise ValueError('Strategy with name {} does not exist'.format(name))
     return Datasets(strategy)
 
 
