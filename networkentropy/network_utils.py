@@ -126,9 +126,18 @@ class Datasets:
         if max_density is not None:
             query.append('({m} / ({n} * ({n} - 1))) <= @max_density'.format(m=NUM_EDGES, n=NUM_NODES))
         if only_downloadable:
-            # using the fact that NaN != NaN, somehow iot works for None values in queries as well
+            # using the fact that NaN != NaN, somehow it works for None values in queries as well
             query.append('{url} == {url}'.format(url=TSV_URL))
         return ' and '.join(query)
+
+    def download_and_build_networks(self, dir_name):
+        """
+        Downloads networks data and creates NetworkX graph objects from the data
+        :param dir_name: name of the directory to download files to
+        :return: Series of NetworkX graph objects (Series may contain None for graphs that couldn't be downloaded
+        """
+        return self.networks.loc[:, [NAME, TSV_URL]].apply(
+            lambda r: build_network_from_out_konect(r[0], r[1], dir_name), axis=1)
 
 
 class KonectCCStrategy(DatasetsStrategy):
