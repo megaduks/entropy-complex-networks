@@ -2,7 +2,7 @@ import os
 import shutil
 import tarfile
 from collections import OrderedDict
-from typing import List
+from typing import List, Optional
 from urllib.request import HTTPError
 
 import networkx as nx
@@ -11,6 +11,8 @@ import wget
 import pandas as pd
 import copy
 from bs4 import BeautifulSoup
+from bs4.element import ResultSet
+from requests import Response
 
 NAME = 'name'
 CATEGORY = 'category'
@@ -23,7 +25,7 @@ class DatasetsStrategy:
     def get_networks_url(self) -> str:
         raise NotImplementedError('Method get_networks_url must be implemented')
 
-    def get_networks_from_response(self, response) -> List[object]:
+    def get_networks_from_response(self, response: Response) -> List[object]:
         raise NotImplementedError('Method get_networks_from_response must be implemented')
 
 
@@ -39,17 +41,17 @@ class Datasets:
             networks = self._get_networks_from_response(response)
             self.networks = self._map_to_df(networks)
 
-    def _request_networks(self):
+    def _request_networks(self) -> Response:
         return requests.get(self._get_networks_url())
 
-    def _get_networks_url(self):
+    def _get_networks_url(self) -> str:
         return self.datasets_strategy.get_networks_url()
 
-    def _get_networks_from_response(self, response):
+    def _get_networks_from_response(self, response: Response) -> List[object]:
         return self.datasets_strategy.get_networks_from_response(response)
 
     @staticmethod
-    def _map_to_df(networks) -> pd.DataFrame:
+    def _map_to_df(networks: list) -> pd.DataFrame:
         transposed_networks = list(map(list, zip(*networks)))
         return pd.DataFrame(data=OrderedDict([
             (NAME, transposed_networks[0]),
@@ -130,7 +132,7 @@ class Datasets:
             query.append('{url} == {url}'.format(url=TSV_URL))
         return ' and '.join(query)
 
-    def download_and_build_networks(self, dir_name):
+    def download_and_build_networks(self, dir_name) -> pd.Series[nx.Graph]:
         """
         Downloads networks data and creates NetworkX graph objects from the data
         :param dir_name: name of the directory to download files to
@@ -146,7 +148,7 @@ class KonectCCStrategy(DatasetsStrategy):
     def get_networks_url(self) -> str:
         return self.networks_url
 
-    def get_networks_from_response(self, response) -> List[object]:
+    def get_networks_from_response(self, response: Response) -> List[object]:
         html = response.content
         soup = BeautifulSoup(html, 'lxml')
 
@@ -166,7 +168,7 @@ class KonectCCStrategy(DatasetsStrategy):
                                  tsv_url))
         return networks
 
-    def _get_tsv_url(self, name, tds):
+    def _get_tsv_url(self, name: str, tds: ResultSet) -> Optional[str]:
         download_icon_title = tds[2].img.get('title')
         if 'is not available' in download_icon_title:
             return None
@@ -179,7 +181,7 @@ class KonectUniStrategy(DatasetsStrategy):
     def get_networks_url(self) -> str:
         return 'http://konect.uni-koblenz.de/networks/'
 
-    def get_networks_from_response(self, response) -> List[object]:
+    def get_networks_from_response(self, response: Response) -> List[object]:
         html = response.content
         soup = BeautifulSoup(html, 'lxml')
 
@@ -199,7 +201,7 @@ class KonectUniStrategy(DatasetsStrategy):
         return networks
 
     @staticmethod
-    def _get_tsv_url(tds):
+    def _get_tsv_url(tds: ResultSet):
         a = tds[8].find_all('div')[1].a
         if a is not None:
             relative_url = a.get('href').replace('../', '')
@@ -208,7 +210,7 @@ class KonectUniStrategy(DatasetsStrategy):
             return None
 
 
-def create_datasets(name):
+def create_datasets(name: str):
     if name == 'konect.cc':
         strategy = KonectCCStrategy()
     elif name == "konect.uni":
@@ -218,12 +220,12 @@ def create_datasets(name):
     return Datasets(strategy)
 
 
-def read_available_datasets_konect(name='konect.cc') -> List[object]:
+def read_available_datasets_konect(name: str = 'konect.cc') -> List[object]:
     datasets = create_datasets(name)
     return datasets.to_list()
 
 
-def download_tsv_dataset_konect(network_name: str, tsv_url: str, dir_name: str) -> str:
+def download_tsv_dataset_konect(network_name: str, tsv_url: str, dir_name: str) -> Optional[str]:
     """
     Downloads the compressed network file into local directory
 
@@ -265,7 +267,7 @@ def unpack_tar_bz2_file(file_name: str, dir_name: str) -> str:
     return output_dir + file_name.replace('.tar.bz2', '/')
 
 
-def build_network_from_out_konect(network_name: str, tsv_url: str, dir_name: str) -> nx.Graph:
+def build_network_from_out_konect(network_name: str, tsv_url: str, dir_name: str) -> Optional[nx.Graph]:
     """
     Reads network files stored on disk and builds a proper NetworkX graph object
 
