@@ -132,11 +132,11 @@ class Datasets:
             query.append('{url} == {url}'.format(url=TSV_URL))
         return ' and '.join(query)
 
-    def download_and_build_networks(self, dir_name) -> pd.Series[nx.Graph]:
+    def download_and_build_networks(self, dir_name) -> pd.DataFrame:
         """
         Downloads networks data and creates NetworkX graph objects from the data
         :param dir_name: name of the directory to download files to
-        :return: Series of NetworkX graph objects (Series may contain None for graphs that couldn't be downloaded
+        :return: DataFrame of NetworkX graph objects (DataFrame may contain None for graphs that couldn't be downloaded
         """
         return self.networks.loc[:, [NAME, TSV_URL]].apply(
             lambda r: build_network_from_out_konect(r[0], r[1], dir_name), axis=1)
@@ -295,11 +295,11 @@ def build_network_from_out_konect(network_name: str, tsv_url: str, dir_name: str
 
     out_file = next(filter(lambda x: 'out.' in x, files), None)
 
-    assert (out_file), 'No out. file in the directory.'
+    assert out_file, 'No out. file in the directory.'
 
-    G = nx.read_adjlist(output_dir + out_file, comments='%')
+    g = nx.read_adjlist(output_dir + out_file, comments='%')
 
-    return G
+    return g
 
 
 def precision_at_k(y_true, y_pred, k=1):
