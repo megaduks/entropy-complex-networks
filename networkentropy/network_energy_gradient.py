@@ -66,14 +66,12 @@ class DecoratedGraph(nx.Graph):
         node2_energy = self.node[node2][_get_energy_method_name(method)]
         return _compute_gradient(node1_energy, node2_energy)
 
-    def get_path_gradient(self, path, method):
-        gradients_sum = 0
-        length = len(path) - 1
-        for i in range(length):
-            node1 = path[i]
-            node2 = path[i + 1]
-            gradients_sum += self.get_gradient(node1, node2, method)
-        return gradients_sum
+    def get_path_energy(self, path, method):
+        energy_sum = 0
+        for node in path:
+            energy = self.node[node][_get_energy_method_name(method)]
+            energy_sum += energy
+        return energy_sum
 
 
 def _decorate_graph(g: nx.Graph, methods: tuple) -> DecoratedGraph:
