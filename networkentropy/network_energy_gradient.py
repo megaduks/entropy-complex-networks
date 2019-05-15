@@ -1,4 +1,4 @@
-from typing import Dict, Callable, Tuple
+from typing import Dict, Callable, Tuple, Sequence
 import networkx as nx
 
 from networkentropy import network_energy as ne
@@ -57,7 +57,9 @@ def get_energy_gradients(g: nx.Graph, method: str, complete: bool = True, radius
 
 
 class DecoratedGraph(nx.Graph):
-    supported_methods = []
+
+    def __init__(self, supported_methods):
+        self.supported_methods = supported_methods
 
     def get_gradient(self, node1, node2, method: str):
         if not (method in self.supported_methods):
@@ -73,14 +75,15 @@ class DecoratedGraph(nx.Graph):
             energy_sum += energy
         return energy_sum
 
+    @classmethod
+    def from_graph(cls, graph: nx.Graph, supported_methods: Sequence[str]) -> "DecoratedGraph":
+        graph.__class__ = cls
+        graph.supported_methods = supported_methods
+        return graph
 
-def _decorate_graph(g: nx.Graph, methods: tuple) -> DecoratedGraph:
-    g.__class__ = DecoratedGraph
-    g.supported_methods = methods
-    return g
 
-
-def get_graph_with_energy_data(g: nx.Graph, methods: Tuple, radius: int = 1, copy: bool = True):
+def get_graph_with_energy_data(g: nx.Graph, methods: Sequence[str], radius: int = 1, copy: bool = True) -> \
+        DecoratedGraph:
     """
     Computes energies and gradients and stores them in a graph as node attributes and edge attributes.
     Energies are stored in node attributes. The format of attribute names is: <METHOD>_energy
@@ -107,9 +110,9 @@ def get_graph_with_energy_data(g: nx.Graph, methods: Tuple, radius: int = 1, cop
             energy_g1 = energies[node1]
             energy_g2 = energies[node2]
             g[node1][node2][_get_gradient_method_name(method)] = _compute_gradient(energy_g1, energy_g2)
-    return _decorate_graph(g, methods)
+    return DecoratedGraph.from_graph(g, methods)
 
 
 def get_energy_gradient_centrality(g: nx.Graph, method: str, radius: int = 1, copy: bool = True):
-    g_with_data = get_graph_with_energy_data(g, (method,), radius, copy)
+    g_with_data = get_graph_with_energy_data(g, [method], radius, copy)
     return nx.pagerank(g_with_data, weight=_get_gradient_method_name(method))
