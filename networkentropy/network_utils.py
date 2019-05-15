@@ -1,15 +1,16 @@
 import os
 import shutil
 import tarfile
-from collections import OrderedDict
-from typing import List, Optional
-from urllib.request import HTTPError
-
 import networkx as nx
 import requests
 import wget
 import pandas as pd
 import copy
+import glob
+
+from collections import OrderedDict
+from typing import List, Optional
+from urllib.request import HTTPError
 from bs4 import BeautifulSoup
 from bs4.element import ResultSet
 from requests import Response
@@ -116,30 +117,31 @@ class Datasets:
                      base_query=None) -> str:
         query = []
         if base_query is not None:
-            query.append('({})'.format(base_query))
+            query.append(f'({base_query})')
         if categories is not None:
-            query.append('{} in @categories'.format(CATEGORY))
+            query.append(f'{CATEGORY} in @categories')
         if min_size is not None:
-            query.append('{} >= @min_size'.format(NUM_NODES))
+            query.append(f'{NUM_NODES} >= @min_size')
         if max_size is not None:
-            query.append('{} <= @max_size'.format(NUM_NODES))
+            query.append(f'{NUM_NODES} <= @max_size')
         if min_density is not None:
-            query.append('({m} / ({n} * ({n} - 1))) >= @min_density'.format(m=NUM_EDGES, n=NUM_NODES))
+            query.append(f'({NUM_EDGES} / ({NUM_NODES} * ({NUM_NODES} - 1))) >= @min_density')
         if max_density is not None:
-            query.append('({m} / ({n} * ({n} - 1))) <= @max_density'.format(m=NUM_EDGES, n=NUM_NODES))
+            query.append(f'({NUM_EDGES} / ({NUM_NODES} * ({NUM_NODES} - 1))) <= @max_density')
         if only_downloadable:
             # using the fact that NaN != NaN, somehow it works for None values in queries as well
-            query.append('{url} == {url}'.format(url=TSV_URL))
+            query.append(f'{TSV_URL} == {TSV_URL}')
         return ' and '.join(query)
 
-    def download_and_build_networks(self, dir_name) -> pd.DataFrame:
+    def download_and_build_networks(self, dir_name='data/') -> pd.DataFrame:
         """
         Downloads networks data and creates NetworkX graph objects from the data
         :param dir_name: name of the directory to download files to
         :return: DataFrame of NetworkX graph objects (DataFrame may contain None for graphs that couldn't be downloaded
         """
-        return self.networks.loc[:, [NAME, TSV_URL]].apply(
+        networks = self.networks.apply(
             lambda r: build_network_from_out_konect(r[0], r[1], dir_name), axis=1)
+        return self.networks.assign(graph=networks)
 
 
 class KonectCCStrategy(DatasetsStrategy):
@@ -173,7 +175,7 @@ class KonectCCStrategy(DatasetsStrategy):
         if 'is not available' in download_icon_title:
             return None
         else:
-            return 'http://konect.cc/files/download.tsv.{}.tar.bz2'.format(name)
+            return f'http://konect.cc/files/download.tsv.{name}.tar.bz2'
 
 
 class KonectUniStrategy(DatasetsStrategy):
@@ -205,7 +207,7 @@ class KonectUniStrategy(DatasetsStrategy):
         a = tds[8].find_all('div')[1].a
         if a is not None:
             relative_url = a.get('href').replace('../', '')
-            return 'http://konect.uni-koblenz.de/{}'.format(relative_url)
+            return f'http://konect.uni-koblenz.de/{relative_url}'
         else:
             return None
 
@@ -216,7 +218,7 @@ def create_datasets(name: str):
     elif name == "konect.uni":
         strategy = KonectUniStrategy()
     else:
-        raise ValueError('Strategy with name {} does not exist'.format(name))
+        raise ValueError(f'Strategy with name {name} does not exist')
     return Datasets(strategy)
 
 
@@ -225,18 +227,18 @@ def read_available_datasets_konect(name: str = 'konect.cc') -> List[object]:
     return datasets.to_list()
 
 
-def download_tsv_dataset_konect(network_name: str, tsv_url: str, dir_name: str) -> Optional[str]:
+def download_tsv_dataset_konect(output_file_name: str, tsv_url: str, dir_name: str) -> Optional[str]:
     """
     Downloads the compressed network file into local directory
 
-    :param network_name: name of the network to download
+    :param output_file_name: name of the network to download
     :param tsv_url: url to network data as tsv
     :param dir_name: name of the local directory to which the compressed file should be saved
     :return: name of the downloaded file
     """
-    output_file = network_name + '.tar.bz2'
-
+    output_file = f'{output_file_name}.tar.bz2'
     try:
+
         file_name = wget.download(tsv_url, out=output_file)
 
         if not os.path.exists(dir_name):
@@ -245,26 +247,22 @@ def download_tsv_dataset_konect(network_name: str, tsv_url: str, dir_name: str) 
             shutil.move(file_name, dir_name + output_file)
     except HTTPError:
         return None
-
     return output_file
 
 
-def unpack_tar_bz2_file(file_name: str, dir_name: str) -> str:
+def unpack_tar_bz2_file(file_name: str, dir_name: str, output_dir_name: str):
     """
     Unpacks the downloaded compressed file on disk
 
+    :param output_dir_name: name of the directory to which file will be extracted
     :param file_name: name of the compressed file
     :param dir_name: name of the directory in which unpacking happens
     :return: name of the directory where unpacked files are
     """
 
     tar = tarfile.open(dir_name + file_name, 'r:bz2')
-    output_dir = dir_name + 'network_' + file_name.replace('.tar.bz2', '') + '/'
-
-    tar.extractall(output_dir)
+    tar.extractall(output_dir_name)
     tar.close()
-
-    return output_dir + file_name.replace('.tar.bz2', '/')
 
 
 def build_network_from_out_konect(network_name: str, tsv_url: str, dir_name: str) -> Optional[nx.Graph]:
@@ -276,29 +274,23 @@ def build_network_from_out_konect(network_name: str, tsv_url: str, dir_name: str
     :param dir_name: name of the directory to download files to
     :return: NetworkX graph object, or None if the network is too large
     """
-    file_name = download_tsv_dataset_konect(network_name=network_name,
-                                            tsv_url=tsv_url,
-                                            dir_name=dir_name)
 
-    # network could not be downloaded
-    if not file_name:
-        return None
+    output_dir_name = f'{dir_name}network_{network_name}/'
 
-    output_dir = unpack_tar_bz2_file(file_name=file_name, dir_name=dir_name)
+    if not os.path.exists(output_dir_name):
+        file_name = download_tsv_dataset_konect(output_file_name=network_name,
+                                                tsv_url=tsv_url,
+                                                dir_name=dir_name)
+        # network could not be downloaded
+        if not file_name:
+            return None
+        unpack_tar_bz2_file(file_name=file_name,
+                            dir_name=dir_name,
+                            output_dir_name=output_dir_name)
 
-    files = [
-        file
-        for file
-        in os.listdir(output_dir)
-        if os.path.isfile(os.path.join(output_dir, file))
-    ]
-
-    out_file = next(filter(lambda x: 'out.' in x, files), None)
-
+    out_file = next(glob.iglob(f'{output_dir_name}/**/out.*', recursive=True))
     assert out_file, 'No out. file in the directory.'
-
-    g = nx.read_adjlist(output_dir + out_file, comments='%')
-
+    g = nx.read_adjlist(out_file, comments='%')
     return g
 
 
