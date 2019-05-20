@@ -1,5 +1,5 @@
 import operator
-from typing import Dict, Callable, Tuple, Iterable
+from typing import Dict, Callable, Tuple, Iterable, Optional
 from types import MethodType
 from networkx.algorithms.community.centrality import girvan_newman
 import networkx as nx
@@ -54,7 +54,7 @@ def get_energy_gradients(g: nx.Graph, method: str, complete: bool = True, radius
         node2 = edge[1]
         gradient = _compute_gradient(energies[node1], energies[node2])
         result[edge] = gradient
-        if complete:
+        if complete and not g.is_directed():
             result[edge[::-1]] = -gradient
     return result
 
@@ -120,7 +120,8 @@ def get_graph_with_energy_data(g: nx.Graph, methods: Iterable[str], radius: int 
 
 
 def get_energy_gradient_centrality(g: nx.Graph, method: str, radius: int = 1, alpha=0.85, personalization=None,
-                                   max_iter=100, tol=1.0e-6, nstart=None, dangling=None, copy: bool = True):
+                                   max_iter=100, tol=1.0e-6, nstart=None, dangling=None,
+                                   copy: bool = True) -> Optional[dict]:
     g_with_data = get_graph_with_energy_data(g, [method], radius, copy)
     try:
         result = nx.pagerank(g_with_data,
