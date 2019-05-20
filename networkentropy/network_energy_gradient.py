@@ -36,7 +36,7 @@ def _compute_gradient(energy1: float, energy2: float) -> float:
     return energy2 - energy1
 
 
-def get_energy_gradients(g: nx.Graph, method: str, complete: bool = True, radius: int = 1) -> Dict[Tuple, float]:
+def get_energy_gradients(g: nx.Graph, method: str, complete: bool = False, radius: int = 1) -> Dict[Tuple, float]:
     """
     Computes gradient between every two connected nodes.
 
