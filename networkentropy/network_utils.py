@@ -8,8 +8,8 @@ import pandas as pd
 import copy
 import glob
 
-from collections import OrderedDict
-from typing import List, Optional
+from collections import namedtuple
+from typing import List, Iterable, Optional
 from urllib.request import HTTPError
 from bs4 import BeautifulSoup
 from bs4.element import ResultSet
@@ -17,16 +17,19 @@ from requests import Response
 
 NAME = 'name'
 CATEGORY = 'category'
+DIRECTED = 'directed'
 NUM_NODES = 'num_nodes'
 NUM_EDGES = 'num_edges'
 TSV_URL = 'tsv_url'
+
+Dataset = namedtuple('Dataset', [NAME, CATEGORY, DIRECTED, NUM_NODES, NUM_EDGES, TSV_URL])
 
 
 class DatasetsStrategy:
     def get_networks_url(self) -> str:
         raise NotImplementedError('Method get_networks_url must be implemented')
 
-    def get_networks_from_response(self, response: Response) -> List[object]:
+    def get_networks_from_response(self, response: Response) -> Iterable[Dataset]:
         raise NotImplementedError('Method get_networks_from_response must be implemented')
 
 
@@ -48,19 +51,13 @@ class Datasets:
     def _get_networks_url(self) -> str:
         return self.datasets_strategy.get_networks_url()
 
-    def _get_networks_from_response(self, response: Response) -> List[object]:
+    def _get_networks_from_response(self, response: Response) -> Iterable[Dataset]:
         return self.datasets_strategy.get_networks_from_response(response)
 
     @staticmethod
-    def _map_to_df(networks: list) -> pd.DataFrame:
-        transposed_networks = list(map(list, zip(*networks)))
-        return pd.DataFrame(data=OrderedDict([
-            (NAME, transposed_networks[0]),
-            (CATEGORY, transposed_networks[1]),
-            (NUM_NODES, transposed_networks[2]),
-            (NUM_EDGES, transposed_networks[3]),
-            (TSV_URL, transposed_networks[4])
-        ]))
+    def _map_to_df(networks: Iterable[Dataset]) -> pd.DataFrame:
+        networks_as_dicts = [d._asdict() for d in networks]
+        return pd.DataFrame(networks_as_dicts)
 
     def to_list(self) -> List[List[object]]:
         """
@@ -81,6 +78,7 @@ class Datasets:
                query_expr: str = None,
                combine_queries: bool = False,
                categories: List[str] = None,
+               directed: bool = None,
                min_size: int = None,
                max_size: int = None,
                min_density: int = None,
@@ -88,6 +86,7 @@ class Datasets:
                only_downloadable: bool = True) -> 'Datasets':
         """
         Filters datasets
+        :param directed: if True, only directed graphs will be returned, if False, only undirected, if None, both types
         :param inplace: specifies whether Dataset should be modified or a modified copy should be returned (default is False)
         :param query_expr: query expression, if specified and combine is False, other arguments are ignored
         :param combine_queries: specifies whether query_expr should be combined with other conditions (default is False)
@@ -99,7 +98,7 @@ class Datasets:
         :param only_downloadable: if True, only datasets available to download will be included
         :return: Modified Datasets object
         """
-        args = [categories, min_size, max_size, min_density, max_density, only_downloadable]
+        args = [categories, directed, min_size, max_size, min_density, max_density, only_downloadable]
         if query_expr is None:
             query_expr = self._build_query(*args)
         elif combine_queries:
@@ -113,11 +112,13 @@ class Datasets:
         return datasets
 
     @staticmethod
-    def _build_query(categories, min_size, max_size, min_density, max_density, only_downloadable,
+    def _build_query(categories, directed, min_size, max_size, min_density, max_density, only_downloadable,
                      base_query=None) -> str:
         query = []
         if base_query is not None:
             query.append(f'({base_query})')
+        if directed is not None:
+            query.append(f'{DIRECTED} == @directed')
         if categories is not None:
             query.append(f'{CATEGORY} in @categories')
         if min_size is not None:
@@ -140,7 +141,7 @@ class Datasets:
         :return: DataFrame of NetworkX graph objects (DataFrame may contain None for graphs that couldn't be downloaded
         """
         networks = self.networks.apply(
-            lambda r: build_network_from_out_konect(r[0], r[1], dir_name), axis=1)
+            lambda s: build_network_from_out_konect(s[NAME], s[TSV_URL], s[DIRECTED], dir_name), axis=1)
         return self.networks.assign(graph=networks)
 
 
@@ -150,7 +151,7 @@ class KonectCCStrategy(DatasetsStrategy):
     def get_networks_url(self) -> str:
         return self.networks_url
 
-    def get_networks_from_response(self, response: Response) -> List[object]:
+    def get_networks_from_response(self, response: Response) -> List[Dataset]:
         html = response.content
         soup = BeautifulSoup(html, 'lxml')
 
@@ -163,14 +164,15 @@ class KonectCCStrategy(DatasetsStrategy):
                 tds = row.find_all('td')
                 name = tds[1].a.get('href').replace('/', '')
                 tsv_url = self._get_tsv_url(name, tds)
-                networks.append((name,
-                                 tds[2].div.get('title'),
-                                 int(tds[3].text.replace(',', '')),
-                                 int(tds[4].text.strip('\n').replace(',', '')),
-                                 tsv_url))
+                networks.append(Dataset(name=name,
+                                        category=tds[2].div.get('title'),
+                                        nun_nodes=int(tds[3].text.replace(',', '')),
+                                        num_edges=int(tds[4].text.strip('\n').replace(',', '')),
+                                        tsv_url=tsv_url))
         return networks
 
-    def _get_tsv_url(self, name: str, tds: ResultSet) -> Optional[str]:
+    @staticmethod
+    def _get_tsv_url(name: str, tds: ResultSet) -> Optional[str]:
         download_icon_title = tds[2].img.get('title')
         if 'is not available' in download_icon_title:
             return None
@@ -183,7 +185,7 @@ class KonectUniStrategy(DatasetsStrategy):
     def get_networks_url(self) -> str:
         return 'http://konect.uni-koblenz.de/networks/'
 
-    def get_networks_from_response(self, response: Response) -> List[object]:
+    def get_networks_from_response(self, response: Response) -> List[Dataset]:
         html = response.content
         soup = BeautifulSoup(html, 'lxml')
 
@@ -195,11 +197,12 @@ class KonectUniStrategy(DatasetsStrategy):
             if row:
                 tds = row.find_all('td')
                 tsv_url = self._get_tsv_url(tds)
-                networks.append((tds[1].a.get('href').replace('/', ''),
-                                 tds[2].span.text,
-                                 int(tds[6].text.replace(',', '')),
-                                 int(tds[7].text.replace(',', '')),
-                                 tsv_url))
+                networks.append(Dataset(name=tds[1].a.get('href').replace('/', ''),
+                                        category=tds[2].span.text,
+                                        directed=tds[3].a.img.get('title').startswith('Directed'),
+                                        num_nodes=int(tds[6].text.replace(',', '')),
+                                        num_edges=int(tds[7].text.replace(',', '')),
+                                        tsv_url=tsv_url))
         return networks
 
     @staticmethod
@@ -265,7 +268,7 @@ def unpack_tar_bz2_file(file_name: str, dir_name: str, output_dir_name: str):
     tar.close()
 
 
-def build_network_from_out_konect(network_name: str, tsv_url: str, dir_name: str) -> Optional[nx.Graph]:
+def build_network_from_out_konect(network_name: str, tsv_url: str, directed: bool, dir_name: str) -> Optional[nx.Graph]:
     """
     Reads network files stored on disk and builds a proper NetworkX graph object
 
@@ -290,7 +293,11 @@ def build_network_from_out_konect(network_name: str, tsv_url: str, dir_name: str
 
     out_file = next(glob.iglob(f'{output_dir_name}/**/out.*', recursive=True))
     assert out_file, 'No out. file in the directory.'
-    g = nx.read_adjlist(out_file, comments='%')
+    if directed:
+        graph_class = nx.DiGraph
+    else:
+        graph_class = nx.Graph
+    g = nx.read_adjlist(out_file, create_using=graph_class, comments='%')
     return g
 
 

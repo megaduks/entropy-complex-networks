@@ -47,6 +47,7 @@ class UtilsTests(unittest.TestCase):
     def test_build_network_from_out_konect(self):
         g = network_utils.build_network_from_out_konect(network_name=BRUNSON_SOUTH_AFRICA_NAME,
                                                         tsv_url=BRUNSON_SOUTH_AFRICA_TSV_URL,
+                                                        directed=False,
                                                         dir_name=TESTS_DATA_PATH)
 
         self.assertTrue(g.number_of_nodes() > 0)

@@ -1,4 +1,5 @@
-from typing import Dict, Callable, Tuple, Sequence
+from typing import Dict, Callable, Tuple, Iterable
+from types import MethodType
 import networkx as nx
 
 from networkentropy import network_energy as ne
@@ -18,15 +19,15 @@ def _get_energy_method(method: str) -> Callable[[nx.Graph, int], Dict]:
     elif method == "graph":
         return ne.graph_energy_centrality
     else:
-        raise ValueError("Method: {} doesn't exist".format(method))
+        raise ValueError(f"Method: {method} doesn't exist")
 
 
 def _get_energy_method_name(method):
-    return "{}_energy".format(method)
+    return f"{method}_energy"
 
 
 def _get_gradient_method_name(method):
-    return "{}_gradient".format(method)
+    return f"{method}_gradient"
 
 
 def _compute_gradient(energy1: float, energy2: float) -> float:
@@ -56,11 +57,7 @@ def get_energy_gradients(g: nx.Graph, method: str, complete: bool = True, radius
     return result
 
 
-class DecoratedGraph(nx.Graph):
-
-    def __init__(self, supported_methods):
-        self.supported_methods = supported_methods
-
+def _decorate_graph(graph: nx.Graph, supported_methods: Iterable[str]):
     def get_gradient(self, node1, node2, method: str):
         if not (method in self.supported_methods):
             raise ValueError
@@ -75,15 +72,21 @@ class DecoratedGraph(nx.Graph):
             energy_sum += energy
         return energy_sum
 
-    @classmethod
-    def from_graph(cls, graph: nx.Graph, supported_methods: Sequence[str]) -> "DecoratedGraph":
-        graph.__class__ = cls
-        graph.supported_methods = supported_methods
-        return graph
+    graph.supported_methods = supported_methods
+    graph.get_gradient = MethodType(get_gradient, graph)
+    graph.get_path_energy = MethodType(get_path_energy, graph)
+    return graph
 
 
-def get_graph_with_energy_data(g: nx.Graph, methods: Sequence[str], radius: int = 1, copy: bool = True) -> \
-        DecoratedGraph:
+def _get_supported_methods(graph: nx.Graph):
+    if hasattr(graph, 'supported_methods'):
+        return graph.supported_methods
+    else:
+        return []
+
+
+def get_graph_with_energy_data(g: nx.Graph, methods: Iterable[str], radius: int = 1, copy: bool = True) -> \
+        nx.Graph:
     """
     Computes energies and gradients and stores them in a graph as node attributes and edge attributes.
     Energies are stored in node attributes. The format of attribute names is: <METHOD>_energy
@@ -95,6 +98,7 @@ def get_graph_with_energy_data(g: nx.Graph, methods: Sequence[str], radius: int 
     :param copy: if True the input graph in copied, if False the input graph is modified
     :return: Graph with energies and gradients stored as node and edge attributes
     """
+    methods = set(methods).difference(_get_supported_methods(g))
     energy_methods = {}
     for m in methods:
         energy_methods[m] = _get_energy_method(m)
@@ -110,9 +114,48 @@ def get_graph_with_energy_data(g: nx.Graph, methods: Sequence[str], radius: int 
             energy_g1 = energies[node1]
             energy_g2 = energies[node2]
             g[node1][node2][_get_gradient_method_name(method)] = _compute_gradient(energy_g1, energy_g2)
-    return DecoratedGraph.from_graph(g, methods)
+    return _decorate_graph(g, methods)
 
 
-def get_energy_gradient_centrality(g: nx.Graph, method: str, radius: int = 1, copy: bool = True):
+def get_energy_gradient_centrality(g: nx.Graph, method: str, radius: int = 1, alpha=0.85, personalization=None,
+                                   max_iter=100, tol=1.0e-6, nstart=None, dangling=None, copy: bool = True):
     g_with_data = get_graph_with_energy_data(g, [method], radius, copy)
-    return nx.pagerank(g_with_data, weight=_get_gradient_method_name(method))
+    try:
+        result = nx.pagerank(g_with_data,
+                             weight=_get_gradient_method_name(method),
+                             alpha=alpha,
+                             personalization=personalization,
+                             max_iter=max_iter,
+                             tol=tol,
+                             nstart=nstart,
+                             dangling=dangling)
+    except nx.PowerIterationFailedConvergence:
+        result = None
+    return result
+
+
+def _get_centrality_name(method):
+    return f'{method}_gradient_centrality'
+
+
+def get_graph_with_energy_gradient_centrality(g: nx.Graph, methods: Iterable[str], radius: int = 1, alpha=0.85,
+                                              personalization=None, max_iter=100, tol=1.0e-6, nstart=None,
+                                              dangling=None, copy: bool = True):
+    if copy:
+        g = g.copy()
+    for method in methods:
+        pagerank = get_energy_gradient_centrality(g,
+                                                  method=method,
+                                                  radius=radius,
+                                                  alpha=alpha,
+                                                  personalization=personalization,
+                                                  max_iter=max_iter,
+                                                  tol=tol,
+                                                  nstart=nstart,
+                                                  dangling=dangling,
+                                                  copy=False)
+        if pagerank is None:
+            return None
+        for node, pr in pagerank.items():
+            g.node[node][_get_centrality_name(method)] = pr
+    return g
