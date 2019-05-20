@@ -1,5 +1,7 @@
+import operator
 from typing import Dict, Callable, Tuple, Iterable
 from types import MethodType
+from networkx.algorithms.community.centrality import girvan_newman
 import networkx as nx
 
 from networkentropy import network_energy as ne
@@ -159,3 +161,10 @@ def get_graph_with_energy_gradient_centrality(g: nx.Graph, methods: Iterable[str
         for node, pr in pagerank.items():
             g.node[node][_get_centrality_name(method)] = pr
     return g
+
+
+def girvan_newman_energy_gradient(graph: nx.Graph, method: str):
+    def most_central_edge(g):
+        gradients = get_energy_gradients(g, method, complete=False)
+        return max(gradients.items(), operator.itemgetter(1))[0]
+    return girvan_newman(graph, most_valuable_edge=most_central_edge)
