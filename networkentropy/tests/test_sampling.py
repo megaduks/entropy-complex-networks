@@ -22,6 +22,13 @@ class SamplingTests(unittest.TestCase):
 
         self.assertAlmostEqual(nx.number_of_edges(sample_graph), int(sample_ratio * nx.number_of_edges(self.G)))
 
+    def test_random_embedding(self):
+        sample_ratio = 0.1
+        sample_graph = sampling.random_embedding(self.G, sample_ratio)
+
+        self.assertAlmostEqual(nx.number_of_nodes(sample_graph), int(sample_ratio * nx.number_of_nodes(self.G)))
+
+
 if __name__ == '__main__':
 
     unittest.main()
