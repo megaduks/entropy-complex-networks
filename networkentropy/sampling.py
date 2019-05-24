@@ -1,12 +1,13 @@
 import networkx as nx
 import numpy as np
 
-import embed
+from .embed import node2vec
 
 from typing import List, Dict
 
 
 # TODO: change sample_ratio to accept either an int (absolute) or float (relative)
+# TODO: verify if sampling from embeddings is correct (doesn't seem to be the case)
 
 def random_node(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
     """"
@@ -49,6 +50,27 @@ def random_edge(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
     return nx.Graph(sample_edges)
 
 
+def random_degree(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
+    """
+    Samples a graph by drawing a sample of nodes with the probability of drawing a node being
+    proportional to node's degree
+
+    :param graph: input graph
+    :param sample_ratio: percentage of the original nodes to be sampled
+    :return: a random subgraph
+    """
+
+    assert sample_ratio >= 0, 'sample_ratio must be between [0, 1]'
+    assert sample_ratio <= 1, 'sample_ratio must be between [0, 1]'
+
+    num_nodes = int(sample_ratio * nx.number_of_nodes(graph))
+    degree_sum = sum(dict(graph.degree).values())
+    degree_probs = [d/degree_sum for n,d in graph.degree]
+    sample_nodes = np.random.choice(graph.nodes, size=num_nodes, replace=False, p=degree_probs)
+
+    return nx.subgraph(graph, sample_nodes)
+
+
 def random_embedding(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
     """
     Samples a graph by drawing random vectors from the embedding matrix
@@ -61,7 +83,7 @@ def random_embedding(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
     assert sample_ratio >= 0, 'sample_ratio must be between [0, 1]'
     assert sample_ratio <= 1, 'sample_ratio must be between [0, 1]'
 
-    embedded_graph = embed.node2vec(graph)
+    embedded_graph = node2vec(graph)
     num_nodes = int(sample_ratio * nx.number_of_nodes(graph))
 
     sample_nodes = list()
@@ -79,9 +101,8 @@ def random_embedding(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
 
 if __name__ == '__main__':
 
-    g = nx.barabasi_albert_graph(100,2)
-    gg = random_embedding(g, 0.1)
+    g = nx.barabasi_albert_graph(1000,2)
+    gg = random_edge(g, 0.1)
 
-    print(g)
-
-    print(gg)
+    print(f'number of nodes: {nx.number_of_nodes(g)} and edges: {nx.number_of_edges(g)}')
+    print(f'number of sample nodes: {nx.number_of_nodes(gg)} and edges: {nx.number_of_edges(gg)}')
