@@ -37,21 +37,4 @@ class NetworkEnergyGradientTest(TestCase):
         assert actual_laplacian_gradients == expected_laplacian_gradients
         assert actual_randic_gradients == expected_randic_gradients
 
-    def test_graph_decorator_path_gradient(self):
-        for node in self.g.nodes():
-            self.g.node[node][neg._get_energy_method_name(GRAPH)] = node
-            self.g.node[node][neg._get_energy_method_name(LAPLACIAN)] = 2 * node
-            self.g.node[node][neg._get_energy_method_name(RANDIC)] = 3 * node
-
-        decorated_graph = neg._decorate_graph(self.g, (GRAPH, LAPLACIAN, RANDIC))
-        path = [2, 0, 1]
-
-        path_graph_gradient = decorated_graph.get_path_gradient(path, GRAPH)
-        path_laplacian_gradient = decorated_graph.get_path_gradient(path, LAPLACIAN)
-        path_randic_gradient = decorated_graph.get_path_gradient(path, RANDIC)
-
-        assert path_graph_gradient == -1
-        assert path_laplacian_gradient == -2
-        assert path_randic_gradient == -3
-
 
