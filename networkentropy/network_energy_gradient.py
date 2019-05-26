@@ -98,13 +98,17 @@ def add_edges_decorator(graph: nx.Graph, decorator_name: str) -> list:
 
 
 def clear_all_nodes_attrs(g: nx.Graph):
-    for n, data in g.nodes(data = True):
+    for n, data in g.nodes(data=True):
         data.clear()
+    if hasattr(g, _NODES_DECORATORS_ATTR_NAME):
+        delattr(g, _NODES_DECORATORS_ATTR_NAME)
 
 
 def clear_all_edges_attrs(g: nx.Graph):
-    for n1, n2, data in g.edges(data = True):
+    for n1, n2, data in g.edges(data=True):
         data.clear()
+    if hasattr(g, _EDGES_DECORATORS_ATTR_NAME):
+        delattr(g, _EDGES_DECORATORS_ATTR_NAME)
 
 
 def decorate_graph(graph: nx.Graph,
@@ -161,6 +165,7 @@ def get_graph_with_energy_data(g: nx.Graph, methods: Iterable[str], radius: int 
     Energies are stored in node attributes. The format of attribute names is: <METHOD>_energy
     Gradients are stored in edge attributes. The format of attribute names is: <METHOD>_gradient
 
+    :param clear: if True, all graph attributes are first deleted
     :param g: input graph
     :param methods: list of names of methods for computing graph energy. Possible values are: randic, laplacian, graph
     :param radius: radius of the egocentric network
@@ -173,7 +178,7 @@ def get_graph_with_energy_data(g: nx.Graph, methods: Iterable[str], radius: int 
     nodes_decorators = {}
     edges_decorators = {}
     for method, get_energy in energy_methods.items():
-        nodes_decorators[_get_energy_method_name(method)] = lambda graph: get_energy(graph, radius)
+        nodes_decorators[_get_energy_method_name(method)] = lambda graph: get_energy(graph, radius=radius)
         edges_decorators[_get_gradient_method_name(method)] = lambda graph: get_energy_gradients(graph, method,
                                                                                                  radius=radius)
     return decorate_graph(g,
@@ -190,8 +195,8 @@ def get_graph_with_energy_data(g: nx.Graph, methods: Iterable[str], radius: int 
 @lru_cache(maxsize=10)
 def get_energy_gradient_centrality(g: nx.Graph, method: str, radius: int = 1, alpha=0.85, personalization=None,
                                    max_iter=100, tol=1.0e-6, nstart=None, dangling=None,
-                                   copy: bool = True) -> Optional[dict]:
-    g_with_data = get_graph_with_energy_data(g, [method], radius, copy)
+                                   copy: bool = True, clear=True) -> Optional[dict]:
+    g_with_data = get_graph_with_energy_data(g, [method], radius, copy, clear=clear)
     try:
         result = nx.pagerank(g_with_data,
                              weight=_get_gradient_method_name(method),
