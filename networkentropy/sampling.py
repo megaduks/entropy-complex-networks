@@ -1,13 +1,14 @@
+from typing import Dict
+
 import networkx as nx
 import numpy as np
 
-from .embed import node2vec
-
-from typing import List, Dict
+from node2vec import Node2Vec
+from scipy.stats import ks_2samp
 
 
 # TODO: change sample_ratio to accept either an int (absolute) or float (relative)
-# TODO: verify if sampling from embeddings is correct (doesn't seem to be the case)
+
 
 def random_node(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
     """"
@@ -104,7 +105,7 @@ def random_embedding(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
     assert sample_ratio >= 0, 'sample_ratio must be between [0, 1]'
     assert sample_ratio <= 1, 'sample_ratio must be between [0, 1]'
 
-    embedded_graph = node2vec(graph)
+    embedded_graph = Node2Vec(graph).fit()
     num_nodes = int(sample_ratio * nx.number_of_nodes(graph))
 
     sample_nodes = list()
@@ -131,10 +132,44 @@ def random_embedding(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
     return nx.subgraph(graph, sample_nodes)
 
 
+def compare_graphs(g1: nx.Graph, g2: nx.Graph) -> Dict :
+    """
+    Compares the original graph with the sampled graph in terms of basic graph descriptors
+    by performing KS-test on normalized distributions
+
+    :param g1: original graph
+    :param g2: sampled graph
+    :return: dictionary with the results of multiple comparisons
+    """
+    #TODO: allow to specify which features are to be used in comparison
+
+    results = {}
+
+    for k,f in {
+        'degree': nx.degree_centrality,
+        'betweenness': nx.betweenness_centrality,
+        'pagerank': nx.pagerank}.items():
+
+        x = list(f(g1).values())
+        y = list(f(g2).values())
+
+        # normalize distributions
+        x = [e/sum(x) for e in x]
+        y = [e/sum(y) for e in y]
+
+        stat, p_val = ks_2samp(x,y)
+
+        results.update({k: {'statistic': stat, 'p_val': p_val}})
+
+    return results
+
+
 if __name__ == '__main__':
 
     g = nx.barabasi_albert_graph(1000,2)
-    gg = random_edge(g, 0.1)
+    gg = random_embedding(g, sample_ratio=0.5)
 
     print(f'number of nodes: {nx.number_of_nodes(g)} and edges: {nx.number_of_edges(g)}')
     print(f'number of sample nodes: {nx.number_of_nodes(gg)} and edges: {nx.number_of_edges(gg)}')
+
+    print(compare_graphs(g, gg))
