@@ -71,6 +71,27 @@ def random_degree(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
     return nx.subgraph(graph, sample_nodes)
 
 
+def random_pagerank(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
+    """
+    Samples a graph by drawing a sample of nodes with the probability of drawing a node being
+    proportional to node's pagerank
+
+    :param graph: input graph
+    :param sample_ratio: percentage of the original nodes to be sampled
+    :return: a random subgraph
+    """
+
+    assert sample_ratio >= 0, 'sample_ratio must be between [0, 1]'
+    assert sample_ratio <= 1, 'sample_ratio must be between [0, 1]'
+
+    num_nodes = int(sample_ratio * nx.number_of_nodes(graph))
+    pagerank_sum = sum(dict(nx.pagerank(graph)).values())
+    pagerank_probs = [p/pagerank_sum for p in dict(nx.pagerank(graph)).values()]
+    sample_nodes = np.random.choice(graph.nodes, size=num_nodes, replace=False, p=pagerank_probs)
+
+    return nx.subgraph(graph, sample_nodes)
+
+
 def random_embedding(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
     """
     Samples a graph by drawing random vectors from the embedding matrix
