@@ -111,7 +111,18 @@ def random_embedding(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
 
     while len(sample_nodes) < num_nodes:
 
-        random_vector = np.apply_along_axis(np.random.choice, axis=0, arr=embedded_graph.wv.vectors, size=1)[0]
+        dimension_sums = np.apply_along_axis(np.sum, arr=np.abs(embedded_graph.wv.vectors), axis=0)
+        probabilities = np.abs(embedded_graph.wv.vectors) / dimension_sums
+
+        random_vector = np.array([])
+
+        for dim in range(embedded_graph.wv.vectors.shape[-1]):
+            col_values = np.squeeze(np.asarray(embedded_graph.wv.vectors[:, dim]))
+            col_probs = np.asarray(probabilities[:,dim])
+            # normalize probabilities to make sure they sum up to 1.0
+            col_probs /= col_probs.sum()
+            random_vector = np.append(random_vector, np.random.choice(col_values, size=1, p=col_probs))
+
         node, sim = embedded_graph.wv.similar_by_vector(random_vector, topn=1)[0]
 
         if int(node) not in sample_nodes:
