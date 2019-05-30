@@ -6,6 +6,8 @@ import numpy as np
 from node2vec import Node2Vec
 from scipy.stats import ks_2samp
 
+from networkentropy import network_energy as ne
+
 
 # TODO: change sample_ratio to accept either an int (absolute) or float (relative)
 
@@ -19,8 +21,7 @@ def random_node(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
     :return a random subgraph
     """
 
-    assert sample_ratio >= 0, 'sample_ratio must be between [0, 1]'
-    assert sample_ratio <= 1, 'sample_ratio must be between [0, 1]'
+    assert 0 <= sample_ratio <= 1, 'sample_ratio must be between [0, 1]'
 
     num_nodes = int(sample_ratio * nx.number_of_nodes(graph))
     sample_nodes = np.random.choice(graph.nodes, num_nodes, replace=False)
@@ -37,8 +38,7 @@ def random_edge(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
     :return: a random subgraph
     """
 
-    assert sample_ratio >= 0, 'sample_ratio must be between [0, 1]'
-    assert sample_ratio <= 1, 'sample_ratio must be between [0, 1]'
+    assert 0 <= sample_ratio <= 1, 'sample_ratio must be between [0, 1]'
 
     num_edges = int(sample_ratio * nx.number_of_edges(graph))
     sample_edges_idx = np.random.choice(len(graph.edges), num_edges, replace=False)
@@ -61,8 +61,7 @@ def random_degree(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
     :return: a random subgraph
     """
 
-    assert sample_ratio >= 0, 'sample_ratio must be between [0, 1]'
-    assert sample_ratio <= 1, 'sample_ratio must be between [0, 1]'
+    assert 0 <= sample_ratio <= 1, 'sample_ratio must be between [0, 1]'
 
     num_nodes = int(sample_ratio * nx.number_of_nodes(graph))
     degree_sum = sum(dict(graph.degree).values())
@@ -82,13 +81,32 @@ def random_pagerank(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
     :return: a random subgraph
     """
 
-    assert sample_ratio >= 0, 'sample_ratio must be between [0, 1]'
-    assert sample_ratio <= 1, 'sample_ratio must be between [0, 1]'
+    assert 0 <= sample_ratio <= 1, 'sample_ratio must be between [0, 1]'
 
     num_nodes = int(sample_ratio * nx.number_of_nodes(graph))
     pagerank_sum = sum(dict(nx.pagerank(graph)).values())
     pagerank_probs = [p/pagerank_sum for p in dict(nx.pagerank(graph)).values()]
     sample_nodes = np.random.choice(graph.nodes, size=num_nodes, replace=False, p=pagerank_probs)
+
+    return nx.subgraph(graph, sample_nodes)
+
+
+def random_energy_gradient(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
+    """
+    Samples a graph by drawing a sample of nodes with the probability of drawing a node being
+    proportional to node's centrality computed from a random walk directed by energy gradients
+
+    :param graph: input graph
+    :param sample_ratio: percentage of the original nodes to be sampled
+    :return: a random subgraph
+    """
+
+    assert 0 <= sample_ratio <= 1, 'sample_ratio must be between [0, 1]'
+
+    num_nodes = int(sample_ratio * nx.number_of_nodes(graph))
+    energy_gradient_sum = sum(dict(ne.graph_energy_gradient_centrality(graph)).values())
+    energy_gradient_probs = [p/energy_gradient_sum for p in dict(ne.graph_energy_gradient_centrality(graph)).values()]
+    sample_nodes = np.random.choice(graph.nodes, size=num_nodes, replace=False, p=energy_gradient_probs)
 
     return nx.subgraph(graph, sample_nodes)
 
@@ -102,8 +120,7 @@ def random_embedding(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
     :return: a random subgraph
     """
 
-    assert sample_ratio >= 0, 'sample_ratio must be between [0, 1]'
-    assert sample_ratio <= 1, 'sample_ratio must be between [0, 1]'
+    assert 0 <= sample_ratio <= 1, 'sample_ratio must be between [0, 1]'
 
     embedded_graph = Node2Vec(graph).fit()
     num_nodes = int(sample_ratio * nx.number_of_nodes(graph))
@@ -148,28 +165,43 @@ def compare_graphs(g1: nx.Graph, g2: nx.Graph) -> Dict :
     for k,f in {
         'degree': nx.degree_centrality,
         'betweenness': nx.betweenness_centrality,
-        'pagerank': nx.pagerank}.items():
+        'pagerank': nx.pagerank,
+        'closeness': nx.closeness_centrality,
+        'clustering': nx.clustering
+    }.items():
 
-        x = list(f(g1).values())
+        if k in g1.graph:
+            x = g1.graph[k]
+        else:
+            x = list(f(g1).values())
+            g1.graph[k] = x
+
         y = list(f(g2).values())
 
         # normalize distributions
-        x = [e/sum(x) for e in x]
-        y = [e/sum(y) for e in y]
+        if sum(x) > 0:
+            x = [e/sum(x) for e in x]
+        if sum(y) > 0:
+            y = [e/sum(y) for e in y]
 
         stat, p_val = ks_2samp(x,y)
 
-        results.update({k: {'statistic': stat, 'p_val': p_val}})
+        results.update({k: {'stat': stat, 'p_val': p_val}})
 
     return results
 
 
 if __name__ == '__main__':
 
-    g = nx.barabasi_albert_graph(1000,2)
-    gg = random_embedding(g, sample_ratio=0.5)
+    g = nx.erdos_renyi_graph(100,0.1)
 
-    print(f'number of nodes: {nx.number_of_nodes(g)} and edges: {nx.number_of_edges(g)}')
-    print(f'number of sample nodes: {nx.number_of_nodes(gg)} and edges: {nx.number_of_edges(gg)}')
+    for i in range(1,100):
+        gg = random_energy_gradient(g, sample_ratio=i/100)
+        result = compare_graphs(g, gg)
 
-    print(compare_graphs(g, gg))
+        print(f"{i}: degree: {result['degree']['p_val']:.4f} "
+              f"betweenness: {result['betweenness']['p_val']:.4f} "
+              f"pagerank: {result['pagerank']['p_val']:.4f} "
+              f"closeness: {result['closeness']['p_val']:.4f} "
+              f"clustering: {result['clustering']['p_val']:.4f} "
+              )
