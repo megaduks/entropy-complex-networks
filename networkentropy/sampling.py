@@ -213,30 +213,43 @@ if __name__ == '__main__':
 
             g = graph_models[graph]
 
-            for j in tqdm(range(1, 100)):
-                sg = random_energy_gradient(g, sample_ratio=j/100)
+            functions = {
+                'energy_gradient': random_energy_gradient,
+                'degree': random_degree,
+                'pagerank': random_pagerank,
+                'edge': random_edge,
+                'node': random_node,
+                'embedding': random_embedding
+            }
 
-                result = compare_graphs(g, sg)
+            for f in tqdm(functions):
 
-                results.append(
-                    (
-                        graph,
-                        i,
-                        j,
-                        result['degree']['p_val'],
-                        result['betweenness']['p_val'],
-                        result['pagerank']['p_val'],
-                        result['closeness']['p_val'],
-                        result['clustering']['p_val']
+                for j in tqdm(range(1, 100)):
+                    sg = functions[f](g, sample_ratio=j/100)
+
+                    result = compare_graphs(g, sg)
+
+                    results.append(
+                        (
+                            graph,
+                            f,
+                            i,
+                            j,
+                            result['degree']['p_val'],
+                            result['betweenness']['p_val'],
+                            result['pagerank']['p_val'],
+                            result['closeness']['p_val'],
+                            result['clustering']['p_val']
+                        )
                     )
-                )
 
     pd.DataFrame(results,
                  columns=['model',
+                          'function',
                           'param',
                           'sample_ratio',
                           'degree',
                           'betweenness',
                           'pagerank',
                           'closeness',
-                          'clustering']).to_csv('results.csv')
+                          'clustering']).to_csv('results.csv', index=None)
