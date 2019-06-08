@@ -9,6 +9,7 @@ from node2vec import Node2Vec
 from scipy.stats import ks_2samp
 
 from networkentropy import network_energy as ne
+from networkentropy.embed import node2vec
 
 
 # TODO: change sample_ratio to accept either an int (absolute) or float (relative)
@@ -68,7 +69,7 @@ def random_degree(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
     num_nodes = int(sample_ratio * nx.number_of_nodes(graph))
     degree_sum = sum(dict(graph.degree).values())
     degree_probs = [d / degree_sum for n, d in graph.degree]
-    sample_nodes = np.random.choice(graph.nodes, size=num_nodes, replace=False, p=degree_probs)
+    sample_nodes = np.random.choice(graph.nodes, size=num_nodes, replace=True, p=degree_probs)
 
     return nx.subgraph(graph, sample_nodes)
 
@@ -124,7 +125,8 @@ def random_embedding(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
 
     assert 0 <= sample_ratio <= 1, 'sample_ratio must be between [0, 1]'
 
-    embedded_graph = Node2Vec(graph).fit()
+    # embedded_graph = Node2Vec(graph, workers=7, quiet=True, p=1, q=0.5, num_walks=1000).fit()
+    embedded_graph = node2vec(graph, walk_number=100)
     num_nodes = int(sample_ratio * nx.number_of_nodes(graph))
 
     sample_nodes = list()
@@ -161,6 +163,7 @@ def compare_graphs(g1: nx.Graph, g2: nx.Graph) -> Dict:
     :return: dictionary with the results of multiple comparisons
     """
     # TODO: allow to specify which features are to be used in comparison
+    # TODO: make sure the function works when empty arrays are passed
 
     results = {}
 
@@ -197,19 +200,19 @@ if __name__ == '__main__':
 
     results = list()
 
-    num_nodes = 100
+    num_nodes = 250
 
     # iterate over graph model main parameter
     for i in tqdm(range(1, 100, 10)):
 
         graph_models = {
-            'random': (nx.erdos_renyi_graph(n=num_nodes, p=i)),
-            'smallworld': nx.watts_strogatz_graph(n=num_nodes, k=4, p=i / 10),
-            'powerlaw': nx.barabasi_albert_graph(n=num_nodes, m=2)
+            'random': (nx.erdos_renyi_graph(n=num_nodes, p=i/100)),
+            'smallworld': nx.watts_strogatz_graph(n=num_nodes, k=4, p=i/100),
+            'powerlaw': nx.barabasi_albert_graph(n=num_nodes, m=int(np.ceil(np.log2(i)+0.01)))
         }
 
         # iterate over graph models
-        for graph in graph_models:
+        for graph in tqdm(graph_models):
 
             g = graph_models[graph]
 
@@ -222,26 +225,32 @@ if __name__ == '__main__':
                 'embedding': random_embedding
             }
 
-            for f in tqdm(functions):
+            # iterate over graph sampling methods
+            for f in functions:
 
-                for j in tqdm(range(1, 100)):
+                # iterate over the size of graph sample
+                for j in range(1, 10):
+
+                    # sample graph according to the sampling function
                     sg = functions[f](g, sample_ratio=j/100)
 
-                    result = compare_graphs(g, sg)
+                    # check if sampling returned any graph
+                    if sg:
+                        result = compare_graphs(g, sg)
 
-                    results.append(
-                        (
-                            graph,
-                            f,
-                            i,
-                            j,
-                            result['degree']['p_val'],
-                            result['betweenness']['p_val'],
-                            result['pagerank']['p_val'],
-                            result['closeness']['p_val'],
-                            result['clustering']['p_val']
+                        results.append(
+                            (
+                                graph,
+                                f,
+                                i,
+                                j,
+                                result['degree']['p_val'],
+                                result['betweenness']['p_val'],
+                                result['pagerank']['p_val'],
+                                result['closeness']['p_val'],
+                                result['clustering']['p_val']
+                            )
                         )
-                    )
 
     pd.DataFrame(results,
                  columns=['model',
