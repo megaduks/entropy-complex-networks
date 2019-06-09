@@ -1,5 +1,3 @@
-from builtins import object
-
 import numpy as np
 import networkx as nx
 import scipy
@@ -10,7 +8,7 @@ from typing import Dict, List
 from itertools import product
 
 
-def get_randic_matrix(g: object) -> np.array:
+def get_randic_matrix(g: nx.Graph) -> np.array:
     """
     Computes the Randić matrix of a graph
 
@@ -32,7 +30,7 @@ def get_randic_matrix(g: object) -> np.array:
     return randic_matrix
 
 
-def get_randic_index(g: object) -> float:
+def get_randic_index(g: nx.Graph) -> float:
     """
     Computes the Randić index of a graph
 
@@ -50,7 +48,7 @@ def get_randic_index(g: object) -> float:
     return randic_index
 
 
-def get_randic_energy(g: object) -> float:
+def get_randic_energy(g: nx.Graph) -> float:
     """
     Computes the Randić energy of a graph
 
@@ -66,7 +64,7 @@ def get_randic_energy(g: object) -> float:
     return randic_energy
 
 
-def get_randic_spectrum(g: object, radius: int = 1) -> np.array:
+def get_randic_spectrum(g: nx.Graph, radius: int = 1) -> np.array:
     """
     Computes the spectrum  (i.e. distribution of egonetwork) Randić energy of a graph
 
@@ -83,7 +81,7 @@ def get_randic_spectrum(g: object, radius: int = 1) -> np.array:
     return np.asarray(result)
 
 
-def randic_centrality(g: object, radius: int = 1, normalized: bool = False):
+def randic_centrality(g: nx.Graph, radius: int = 1, normalized: bool = False) -> Dict:
     """
     Computes the centrality index for each vertex by computing the Randić energy of that vertex's
     neighborhood of a given radius
@@ -103,7 +101,7 @@ def randic_centrality(g: object, radius: int = 1, normalized: bool = False):
     return result
 
 
-def get_laplacian_energy(g: object) -> float:
+def get_laplacian_energy(g: nx.Graph) -> float:
     """
     Computes the energy of the Laplacian of a graph
 
@@ -120,7 +118,7 @@ def get_laplacian_energy(g: object) -> float:
     return laplacian_energy
 
 
-def get_laplacian_spectrum(g: object, radius: int = 1) -> np.array:
+def get_laplacian_spectrum(g: nx.Graph, radius: int = 1) -> np.array:
     """
     Computes the spectrum of the Laplacian energy of a graph
 
@@ -138,7 +136,7 @@ def get_laplacian_spectrum(g: object, radius: int = 1) -> np.array:
     return np.asarray(result)
 
 
-def laplacian_centrality(g: object, radius: int = 1, normalized: bool = False) -> Dict:
+def laplacian_centrality(g: nx.Graph, radius: int = 1, normalized: bool = False) -> Dict:
     """
     Computes the centrality index for each vertex by computing the Laplacian energy of that vertex's
     neighborhood of a given radius
@@ -158,7 +156,7 @@ def laplacian_centrality(g: object, radius: int = 1, normalized: bool = False) -
     return result
 
 
-def get_graph_energy(g: object) -> float:
+def get_graph_energy(g: nx.Graph) -> float:
     """
     Computes the energy of the adjacency matrix of a graph
 
@@ -172,7 +170,7 @@ def get_graph_energy(g: object) -> float:
     return graph_energy
 
 
-def get_graph_spectrum(g: object, radius: int = 1) -> np.array:
+def get_graph_spectrum(g: nx.Graph, radius: int = 1) -> np.array:
     """
     Computes the spectrum of the graph energy of a graph
 
@@ -189,7 +187,7 @@ def get_graph_spectrum(g: object, radius: int = 1) -> np.array:
     return np.asarray(result)
 
 
-def graph_energy_centrality(g: object, radius: int = 1, normalized: bool = False) -> Dict:
+def graph_energy_centrality(g: nx.Graph, radius: int = 1, normalized: bool = False) -> Dict:
     """
     Computes the centrality index for each vertex by computing the graph energy of that vertex's
     neighborhood of a given radius
@@ -209,7 +207,7 @@ def graph_energy_centrality(g: object, radius: int = 1, normalized: bool = False
     return result
 
 
-def get_energy_gradients(g: object, energy_dist: List[float] = None, mode: str = 'graph') -> Dict:
+def get_energy_gradients(g: nx.Graph, energy_dist: List[float] = None, mode: str = 'graph') -> Dict:
     """
     Compute gradients of a given graph energy for all nodes
 
@@ -260,7 +258,7 @@ def get_max_energy_gradient(energy_gradients: Dict) -> List[int]:
     return result
 
 
-def gradient_centrality(g: object, normalized: bool = False, mode: str = 'graph') -> Dict:
+def gradient_centrality(g: nx.Graph, normalized: bool = False, mode: str = 'graph') -> Dict:
     """
     Computes the stationary distribution of the random walk directed by the gradient of graph energy
 
@@ -276,6 +274,8 @@ def gradient_centrality(g: object, normalized: bool = False, mode: str = 'graph'
         gs = get_randic_spectrum(g)
     elif mode == 'laplacian':
         gs = get_laplacian_spectrum(g)
+    else:
+        raise ValueError("supported modes are: 'graph', 'randic', 'laplacian'")
 
     gradients = {
         (u, v): gs[u] - gs[v]
