@@ -200,7 +200,7 @@ if __name__ == '__main__':
 
     results = list()
 
-    num_nodes = 250
+    num_nodes = 1000
 
     # iterate over graph model main parameter
     for i in tqdm(range(1, 100, 10)):
