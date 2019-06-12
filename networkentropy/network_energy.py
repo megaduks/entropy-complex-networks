@@ -35,7 +35,7 @@ def get_randic_matrix(g: object) -> np.matrix:
     D = nx.degree(g)
 
     randic_values = [1 / np.sqrt(D[v] * D[w]) if g.has_edge(v, w) else 0 for (v, w) in product(g.nodes, g.nodes)]
-    randic_matrix = np.matrix(randic_values).reshape(g.number_of_nodes(), g.number_of_nodes())
+    randic_matrix = np.asarray(randic_values).reshape(g.number_of_nodes(), g.number_of_nodes())
 
     return randic_matrix
 

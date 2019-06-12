@@ -58,6 +58,12 @@ class SamplingTests(unittest.TestCase):
 
         self.assertAlmostEqual(nx.number_of_nodes(sample_graph), int(sample_ratio * nx.number_of_nodes(self.G)))
 
+    def test_random_randic_energy(self):
+        sample_ratio = 0.1
+        sample_graph = sampling.random_randic_energy(self.G, sample_ratio)
+
+        self.assertAlmostEqual(nx.number_of_nodes(sample_graph), int(sample_ratio * nx.number_of_nodes(self.G)))
+
 
 if __name__ == '__main__':
 
