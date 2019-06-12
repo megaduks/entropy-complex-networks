@@ -282,14 +282,17 @@ if __name__ == '__main__':
                 'pagerank': random_pagerank,
                 'edge': random_edge,
                 'node': random_node,
-                'embedding': random_embedding
+                'embedding': random_embedding,
+                'energy': random_graph_energy,
+                'laplacian': random_laplacian_energy,
+                'randic': random_randic_energy
             }
 
             # iterate over graph sampling methods
             for f in functions:
 
                 # iterate over the size of graph sample
-                for j in range(1, 10):
+                for j in range(1, 20):
 
                     # sample graph according to the sampling function
                     sg = functions[f](g, sample_ratio=j/100)
