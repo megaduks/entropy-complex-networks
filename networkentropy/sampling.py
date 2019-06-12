@@ -203,11 +203,11 @@ if __name__ == '__main__':
     num_nodes = 1000
 
     # iterate over graph model main parameter
-    for i in tqdm(range(1, 100, 10)):
+    for i in tqdm(range(1, 10)):
 
         graph_models = {
             'random': (nx.erdos_renyi_graph(n=num_nodes, p=i/100)),
-            'smallworld': nx.watts_strogatz_graph(n=num_nodes, k=4, p=i/100),
+            'smallworld': nx.watts_strogatz_graph(n=num_nodes, k=4, p=i/1000),
             'powerlaw': nx.barabasi_albert_graph(n=num_nodes, m=int(np.ceil(np.log2(i)+0.01)))
         }
 
