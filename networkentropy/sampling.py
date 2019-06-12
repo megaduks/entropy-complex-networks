@@ -134,6 +134,25 @@ def random_graph_energy(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
     return nx.subgraph(graph, sample_nodes)
 
 
+def random_laplacian_energy(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
+    """
+    Samples a graph by drawing a sample of nodes with the probability of drawing a node being
+    proportional to node's centrality computed from the Laplacian energy of node's neighborhood
+
+    :param graph: input graph
+    :param sample_ratio: percentage of the original nodes to be sampled
+    :return: a random subgraph
+    """
+
+    assert 0 <= sample_ratio <= 1, 'sample_ratio must be between [0, 1]'
+
+    num_nodes = int(sample_ratio * nx.number_of_nodes(graph))
+    laplacian_energy_sum = sum(dict(ne.laplacian_centrality(graph)).values())
+    laplacian_energy_probs = [p / laplacian_energy_sum for p in dict(ne.laplacian_centrality(graph)).values()]
+    sample_nodes = np.random.choice(graph.nodes, size=num_nodes, replace=False, p=laplacian_energy_probs)
+
+    return nx.subgraph(graph, sample_nodes)
+
 
 def random_embedding(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
     """
