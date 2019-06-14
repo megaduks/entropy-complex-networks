@@ -19,6 +19,16 @@ class EmbedTests(unittest.TestCase):
         self.assertEqual(vec_number, len(self.G.nodes))
         self.assertEqual(vec_size, embedding_size)
 
+    def test_embedding_with_empty_neighborhood(self):
+        embedding_size = 200
+        G = nx.erdos_renyi_graph(n=100, p=0.0001)
+        node_embeddings = embed.node2vec(G, embedding_size=embedding_size)
+
+        vec_number, vec_size = node_embeddings.wv.vectors.shape
+
+        self.assertEqual(vec_number, len(self.G.nodes))
+        self.assertEqual(vec_size, embedding_size)
+
 
 if __name__ == '__main__':
 

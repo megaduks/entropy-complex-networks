@@ -27,7 +27,11 @@ def generate_random_walk(graph: object, walk_length: int, beta:float = 0.15) -> 
         if np.random.random() <= beta:
             next_node = np.random.choice(graph.nodes)
         else:
-            next_node = np.random.choice(list(nx.neighbors(graph, current_node)))
+            neighborhood = list(nx.neighbors(graph, current_node))
+            if neighborhood:
+                next_node = np.random.choice(neighborhood)
+            else:
+                next_node = np.random.choice(graph.nodes)
 
         walk.append(str(next_node))
         current_node = next_node
@@ -54,6 +58,6 @@ def node2vec(graph: object, walk_length: int = 10, walk_number: int = 10000, emb
         walks.append(generate_random_walk(graph, walk_length=walk_length))
 
     # train a word2vec model on random walks as if they were sentences
-    model = gensim.models.Word2Vec(walks, min_count=1, workers=num_cpu, size=embedding_size)
+    model = gensim.models.Word2Vec(walks, min_count=5, workers=num_cpu, size=embedding_size, batch_words=10)
 
     return model
