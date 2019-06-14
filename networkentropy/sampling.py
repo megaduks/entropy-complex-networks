@@ -287,7 +287,6 @@ if __name__ == '__main__':
 
             # iterate over graph sampling methods
             for f in tqdm(functions):
-                print(f)
 
                 # iterate over the size of graph sample
                 for j in range(1, 20):
