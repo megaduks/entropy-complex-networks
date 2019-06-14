@@ -257,7 +257,7 @@ if __name__ == '__main__':
 
     results = list()
 
-    num_nodes = 250
+    num_nodes = 1000
 
     # iterate over graph model main parameter
     for i in tqdm(range(1, 10)):
@@ -274,11 +274,11 @@ if __name__ == '__main__':
             g = graph_models[graph]
 
             functions = {
-                # 'energy_gradient': random_energy_gradient,
-                # 'degree': random_degree,
-                # 'pagerank': random_pagerank,
-                # 'edge': random_edge,
-                # 'node': random_node,
+                'energy_gradient': random_energy_gradient,
+                'degree': random_degree,
+                'pagerank': random_pagerank,
+                'edge': random_edge,
+                'node': random_node,
                 'embedding': random_embedding,
                 'energy': random_graph_energy,
                 'laplacian': random_laplacian_energy,
