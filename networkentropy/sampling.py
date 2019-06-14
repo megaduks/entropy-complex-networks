@@ -189,26 +189,23 @@ def random_embedding(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
     embedded_graph = node2vec(graph, walk_number=100)
     num_nodes = int(sample_ratio * nx.number_of_nodes(graph))
 
-    sample_nodes = list()
+    dimension_sums = np.apply_along_axis(np.sum, arr=np.abs(embedded_graph.wv.vectors), axis=0)
+    probabilities = np.abs(embedded_graph.wv.vectors) / dimension_sums
 
-    while len(sample_nodes) < num_nodes:
+    random_vector = np.array([])
 
-        dimension_sums = np.apply_along_axis(np.sum, arr=np.abs(embedded_graph.wv.vectors), axis=0)
-        probabilities = np.abs(embedded_graph.wv.vectors) / dimension_sums
+    for dim in range(embedded_graph.wv.vectors.shape[-1]):
+        col_values = np.squeeze(np.asarray(embedded_graph.wv.vectors[:, dim]))
+        col_probs = np.asarray(probabilities[:, dim])
+        # normalize probabilities to make sure they sum up to 1.0
+        col_probs /= col_probs.sum()
+        random_vector = np.append(random_vector, np.random.choice(col_values, size=1, p=col_probs))
 
-        random_vector = np.array([])
-
-        for dim in range(embedded_graph.wv.vectors.shape[-1]):
-            col_values = np.squeeze(np.asarray(embedded_graph.wv.vectors[:, dim]))
-            col_probs = np.asarray(probabilities[:, dim])
-            # normalize probabilities to make sure they sum up to 1.0
-            col_probs /= col_probs.sum()
-            random_vector = np.append(random_vector, np.random.choice(col_values, size=1, p=col_probs))
-
-        node, sim = embedded_graph.wv.similar_by_vector(random_vector, topn=1)[0]
-
-        if int(node) not in sample_nodes:
-            sample_nodes.append(int(node))
+    sample_nodes = [
+        node
+        for (node, sim)
+        in embedded_graph.wv.similar_by_vector(random_vector, topn=num_nodes)
+    ]
 
     return nx.subgraph(graph, sample_nodes)
 
@@ -260,7 +257,7 @@ if __name__ == '__main__':
 
     results = list()
 
-    num_nodes = 1000
+    num_nodes = 250
 
     # iterate over graph model main parameter
     for i in tqdm(range(1, 10)):
@@ -277,11 +274,11 @@ if __name__ == '__main__':
             g = graph_models[graph]
 
             functions = {
-                'energy_gradient': random_energy_gradient,
-                'degree': random_degree,
-                'pagerank': random_pagerank,
-                'edge': random_edge,
-                'node': random_node,
+                # 'energy_gradient': random_energy_gradient,
+                # 'degree': random_degree,
+                # 'pagerank': random_pagerank,
+                # 'edge': random_edge,
+                # 'node': random_node,
                 'embedding': random_embedding,
                 'energy': random_graph_energy,
                 'laplacian': random_laplacian_energy,
@@ -289,7 +286,8 @@ if __name__ == '__main__':
             }
 
             # iterate over graph sampling methods
-            for f in functions:
+            for f in tqdm(functions):
+                print(f)
 
                 # iterate over the size of graph sample
                 for j in range(1, 20):
