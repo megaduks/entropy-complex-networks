@@ -199,10 +199,12 @@ def random_embedding(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
         col_probs = np.asarray(probabilities[:, dim])
         # normalize probabilities to make sure they sum up to 1.0
         col_probs /= col_probs.sum()
-        random_vector = np.append(random_vector, col_values[np.random.choice(len(col_values), size=1, p=col_probs)])
+        random_vector = np.append(random_vector, col_values[np.random.choice(col_values.size, size=1, p=col_probs)])
+
+    pass
 
     sample_nodes = [
-        node
+        int(node)
         for (node, sim)
         in embedded_graph.wv.similar_by_vector(random_vector, topn=num_nodes)
     ]
