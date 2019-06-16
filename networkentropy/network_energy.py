@@ -212,7 +212,7 @@ def get_graph_energy_gradients(g: object, energy_dist: List[float] = None) -> Di
 
     result = {
         n: {
-            nn: energy_dist[n] - energy_dist[nn]
+            nn: energy_dist[nn] - energy_dist[n]
             for nn
             in nx.ego_graph(G=g, n=n)
             if nn != n
