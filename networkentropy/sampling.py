@@ -5,14 +5,14 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-from node2vec import Node2Vec
 from scipy.stats import ks_2samp
 
 from networkentropy import network_energy as ne
 from networkentropy.embed import node2vec
 
 
-# TODO: change sample_ratio to accept either an int (absolute) or float (relative)
+#TODO: change sample_ratio to accept either an int (absolute) or float (relative)
+#TODO: add sampling from embeddings computed on walks driven by graph energy gradients
 
 
 def random_node(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
@@ -174,19 +174,24 @@ def random_randic_energy(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
     return nx.subgraph(graph, sample_nodes)
 
 
-def random_embedding(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
+def random_embedding(graph: nx.Graph, sample_ratio: float, walk_type: str = None) -> nx.Graph:
     """
     Samples a graph by drawing random vectors from the embedding matrix
 
     :param graph: input graph
     :param sample_ratio: percentage of the original graph nodes to be sampled
+    :param walk_type: name of energy for embedding computation, allowed values include 'graph', 'laplacian', 'randic',
+            defaunt None generates regular random walk embeddings
     :return: a random subgraph
     """
 
     assert 0 <= sample_ratio <= 1, 'sample_ratio must be between [0, 1]'
 
-    # embedded_graph = Node2Vec(graph, workers=7, quiet=True, p=1, q=0.5, num_walks=1000).fit()
-    embedded_graph = node2vec(graph, walk_number=100)
+    if walk_type:
+        embedded_graph = node2vec(graph, walk_number=100, walk_type=walk_type)
+    else:
+        embedded_graph = node2vec(graph, walk_number=100)
+
     num_nodes = int(sample_ratio * nx.number_of_nodes(graph))
 
     dimension_sums = np.apply_along_axis(np.sum, arr=np.abs(embedded_graph.wv.vectors), axis=0)
@@ -282,6 +287,9 @@ if __name__ == '__main__':
                 'edge': random_edge,
                 'node': random_node,
                 'embedding': random_embedding,
+                'graph_embedding_walk': random_embedding,
+                'laplacian_embedding_walk': random_embedding,
+                'randic_embedding_walk': random_embedding,
                 'energy': random_graph_energy,
                 'laplacian': random_laplacian_energy,
                 'randic': random_randic_energy
@@ -295,6 +303,13 @@ if __name__ == '__main__':
 
                     # sample graph according to the sampling function
                     sg = functions[f](g, sample_ratio=j/100)
+
+                    if f == 'graph_embedding_walk':
+                        sg = functions[f](g, sample_ratio=j/100, walk_type='graph')
+                    elif f == 'laplacian_embedding_walk':
+                        sg = functions[f](g, sample_ratio=j/100, walk_type='laplacian')
+                    elif f == 'randic_embedding_walk':
+                        sg = functions[f](g, sample_ratio=j/100, walk_type='randic')
 
                     # check if sampling returned any graph
                     if sg:
