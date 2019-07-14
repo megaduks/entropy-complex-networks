@@ -3,7 +3,6 @@ from typing import Tuple
 
 SIGNATURE_SIZE = 64
 
-#TODO: add code to compute the algorithmic complexity of a string
 #TODO: add code to shuffle arrays and compare algorithmic complexities
 
 
