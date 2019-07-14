@@ -26,5 +26,11 @@ class TestHBAMMethods(unittest.TestCase):
         output = hbam.binarize((input)).tolist()
         self.assertListEqual(output, [1,1,1,0,1,0,1,0])
 
+    def test_unbinarize(self):
+        input = np.array([0,0,0,1,1,0,1,1])
+        output = hbam.unbinarize(input, signature_size=2).tolist()
+        self.assertListEqual(output, [0,1,2,3])
+
+
 if __name__ == '__main__':
     unittest.main()

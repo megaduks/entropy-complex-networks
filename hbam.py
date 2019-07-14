@@ -1,19 +1,48 @@
 import numpy as np
+import networkx as nx
 
 SIGNATURE_SIZE = 64
 
+#TODO: add code to compute the algorithmic complexity of a string
+#TODO: add code to shuffle arrays and compare algorithmic complexities
 
-def encode(M: np.array) -> np.array:
+def complexity(M: np.array, signature_size: int = SIGNATURE_SIZE) -> np.array:
     """
     Encodes an input array M using hierarchical bitmap compression
 
     :param M: input array
+    :param signature_size: size of a single signature
     :return: hierarchical bitmap encoding of input array
     """
+    #TODO: add code to change adjacency matrix into sequence of integers
+    #TODO: add tests for encode() function
 
     n_rows, n_columns = M.shape
+    M = M.reshape(n_rows*n_columns,).A1
+    hbam_M = encode_int(M)
 
-    pass
+    original_length = len(M)
+    hbam_encoding_length = len(seq2hbseq(hbam_M, signature_size))
+
+    return hbam_encoding_length / original_length
+
+
+def unbinarize(a: np.array, signature_size: int = SIGNATURE_SIZE) -> np.array:
+    """
+    Converts a binary array into an array of integers
+
+    :param a: binary array
+    :param signature_size: size of a single signature
+    :return: output array
+    """
+
+    # length of the input array must be the multiple of the signature size
+    if len(a) % signature_size:
+        a = np.append(a, np.zeros(signature_size - len(a) % signature_size))
+    a = a.reshape(len(a) // signature_size, signature_size).astype(int)
+    result = np.apply_along_axis(arr2int, axis=1, arr=a, signature_size=signature_size)
+
+    return result
 
 
 def binarize(a: np.array) -> np.array:
@@ -55,6 +84,8 @@ def seq2hbseq(a: np.array, signature_size: int = SIGNATURE_SIZE) -> np.array:
     :return:  array of ints forming the condensed hierarchical bitmap sequence
     """
 
+    #TODO: add tests for this method
+
     # length of the input array must be the multiple of the signature size
     a = np.append(a, np.zeros(signature_size - len(a) % signature_size))
 
@@ -85,3 +116,9 @@ def seq2hbseq(a: np.array, signature_size: int = SIGNATURE_SIZE) -> np.array:
     result = np.insert(result, 0, current_level)
 
     return result.astype(int)
+
+
+if __name__ == '__main__':
+
+    g = nx.barabasi_albert_graph(n=100, m=2)
+    print(complexity(nx.adjacency_matrix(g).todense()))
