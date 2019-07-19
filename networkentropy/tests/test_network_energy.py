@@ -4,6 +4,7 @@ import numpy as np
 
 from .. import network_energy
 
+
 class NetworkEnergyTests(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
