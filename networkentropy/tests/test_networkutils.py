@@ -19,11 +19,11 @@ class UtilsTests(unittest.TestCase):
         unittest.TestCase.__init__(self, *args, **kwargs)
 
     def test_read_avalilable_datasets_konect(self):
-        networks = network_utils.read_available_datasets_konect(name='konect.uni')
+        networks = network_utils.read_available_datasets_konect(name='konect.cc')
 
         self.assertGreater(len(networks), 0)
 
-    def test_download_tsv_dataset_konect(self):
+    def _test_download_tsv_dataset_konect(self):
         output_file_name = f'{BRUNSON_SOUTH_AFRICA_NAME}-test'
         output_file_name_tar_bz = f'{TESTS_DATA_PATH}{output_file_name}.tar.bz2'
         try:
