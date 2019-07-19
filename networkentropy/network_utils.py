@@ -166,7 +166,8 @@ class KonectCCStrategy(DatasetsStrategy):
                 tsv_url = self._get_tsv_url(name, tds)
                 networks.append(Dataset(name=name,
                                         category=tds[2].div.get('title'),
-                                        nun_nodes=int(tds[3].text.replace(',', '')),
+                                        directed=None,
+                                        num_nodes=int(tds[3].text.replace(',', '')),
                                         num_edges=int(tds[4].text.strip('\n').replace(',', '')),
                                         tsv_url=tsv_url))
         return networks
