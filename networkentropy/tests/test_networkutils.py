@@ -4,6 +4,8 @@ import shutil
 
 from .. import network_utils
 
+from typing import Iterable
+
 BRUNSON_SOUTH_AFRICA_TAR_BZ = 'brunson_south-africa.tar.bz2'
 
 BRUNSON_SOUTH_AFRICA_NAME = 'brunson_south-africa'
@@ -19,9 +21,21 @@ class UtilsTests(unittest.TestCase):
         unittest.TestCase.__init__(self, *args, **kwargs)
 
     def test_read_avalilable_datasets_konect(self):
-        networks = network_utils.read_available_datasets_konect(name='konect.cc')
+        networks = network_utils.read_available_datasets_konect(name='konect.cc').to_list()
 
         self.assertGreater(len(networks), 0)
+
+    def test_is_iterable(self):
+        networks = network_utils.read_available_datasets_konect(name='konect.cc')
+
+        self.assertIsInstance(networks, Iterable)
+
+    def test_filter_by_number_of_nodes(self):
+        MAX_SIZE = 50
+        networks = network_utils.read_available_datasets_konect(name='konect.cc').filter(max_size=MAX_SIZE)
+        max_size = max([network_utils.Dataset(*g).num_nodes for g in networks])
+
+        self.assertLessEqual(max_size, MAX_SIZE)
 
     def _test_download_tsv_dataset_konect(self):
         output_file_name = f'{BRUNSON_SOUTH_AFRICA_NAME}-test'

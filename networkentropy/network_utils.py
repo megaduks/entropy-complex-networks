@@ -24,8 +24,6 @@ TSV_URL = 'tsv_url'
 
 Dataset = namedtuple('Dataset', [NAME, CATEGORY, DIRECTED, NUM_NODES, NUM_EDGES, TSV_URL])
 
-#TODO: add unit tests for intereating over Datasets class
-#TODO: add unit tests for filtering of Datasets class
 
 class DatasetsStrategy:
     def get_networks_url(self) -> str:
