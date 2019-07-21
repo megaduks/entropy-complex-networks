@@ -24,6 +24,8 @@ TSV_URL = 'tsv_url'
 
 Dataset = namedtuple('Dataset', [NAME, CATEGORY, DIRECTED, NUM_NODES, NUM_EDGES, TSV_URL])
 
+#TODO: add unit tests for intereating over Datasets class
+#TODO: add unit tests for filtering of Datasets class
 
 class DatasetsStrategy:
     def get_networks_url(self) -> str:
@@ -37,6 +39,7 @@ class Datasets:
     def __init__(self, datasets_strategy: DatasetsStrategy):
         self.datasets_strategy = datasets_strategy
         self.networks = pd.DataFrame()
+        self.current_iter = 0
 
         response = self._request_networks()
         if response.status_code != 200:
@@ -44,6 +47,19 @@ class Datasets:
         else:
             networks = self._get_networks_from_response(response)
             self.networks = self._map_to_df(networks)
+
+    def __len__(self):
+        return len(self.networks)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.current_iter == len(self.networks):
+            raise StopIteration
+
+        self.current_iter += 1
+        return self.networks.iloc[self.current_iter-1]
 
     def _request_networks(self) -> Response:
         return requests.get(self._get_networks_url())
@@ -226,9 +242,9 @@ def create_datasets(name: str):
     return Datasets(strategy)
 
 
-def read_available_datasets_konect(name: str = 'konect.cc') -> List[object]:
+def read_available_datasets_konect(name: str = 'konect.cc') -> Datasets:
     datasets = create_datasets(name)
-    return datasets.to_list()
+    return datasets
 
 
 def download_tsv_dataset_konect(output_file_name: str, tsv_url: str, dir_name: str) -> Optional[str]:
@@ -275,6 +291,7 @@ def build_network_from_out_konect(network_name: str, tsv_url: str, directed: boo
 
     :param network_name: name of the network to build
     :param tsv_url: url to network data as tsv
+    :param directed: is network directed
     :param dir_name: name of the directory to download files to
     :return: NetworkX graph object, or None if the network is too large
     """
@@ -299,6 +316,8 @@ def build_network_from_out_konect(network_name: str, tsv_url: str, directed: boo
     else:
         graph_class = nx.Graph
     g = nx.read_adjlist(out_file, create_using=graph_class, comments='%')
+    g.graph['name'] = network_name
+
     return g
 
 
