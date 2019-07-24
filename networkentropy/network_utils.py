@@ -18,12 +18,14 @@ from requests import Response
 NAME = 'name'
 CATEGORY = 'category'
 DIRECTED = 'directed'
+BIPARTITE = 'bipartite'
 NUM_NODES = 'num_nodes'
 NUM_EDGES = 'num_edges'
 TSV_URL = 'tsv_url'
 
-Dataset = namedtuple('Dataset', [NAME, CATEGORY, DIRECTED, NUM_NODES, NUM_EDGES, TSV_URL])
+Dataset = namedtuple('Dataset', [NAME, CATEGORY, DIRECTED, BIPARTITE, NUM_NODES, NUM_EDGES, TSV_URL])
 
+# TODO: re-implement filtering of networks because it does not work
 
 class DatasetsStrategy:
     def get_networks_url(self) -> str:
@@ -93,6 +95,7 @@ class Datasets:
                combine_queries: bool = False,
                categories: List[str] = None,
                directed: bool = None,
+               bipartite: bool = None,
                min_size: int = None,
                max_size: int = None,
                min_density: int = None,
@@ -105,6 +108,8 @@ class Datasets:
         :param query_expr: query expression, if specified and combine is False, other arguments are ignored
         :param combine_queries: specifies whether query_expr should be combined with other conditions (default is False)
         :param categories: categories to be included
+        :param directed: if True, only directed networks are included
+        :param bipartite: if True, only bipartite networks are included
         :param min_size: minimum number of nodes required in the network
         :param max_size: maximum number of nodes allowed in the network
         :param min_density: minimum density of network allowed
@@ -112,7 +117,7 @@ class Datasets:
         :param only_downloadable: if True, only datasets available to download will be included
         :return: Modified Datasets object
         """
-        args = [categories, directed, min_size, max_size, min_density, max_density, only_downloadable]
+        args = [categories, directed, bipartite, min_size, max_size, min_density, max_density, only_downloadable]
         if query_expr is None:
             query_expr = self._build_query(*args)
         elif combine_queries:
@@ -126,13 +131,15 @@ class Datasets:
         return datasets
 
     @staticmethod
-    def _build_query(categories, directed, min_size, max_size, min_density, max_density, only_downloadable,
+    def _build_query(categories, directed, bipartite, min_size, max_size, min_density, max_density, only_downloadable,
                      base_query=None) -> str:
         query = []
         if base_query is not None:
             query.append(f'({base_query})')
         if directed is not None:
             query.append(f'{DIRECTED} == @directed')
+        if bipartite is not None:
+            query.append(f'{BIPARTITE} == @bipartite')
         if categories is not None:
             query.append(f'{CATEGORY} in @categories')
         if min_size is not None:
@@ -180,7 +187,8 @@ class KonectCCStrategy(DatasetsStrategy):
                 tsv_url = self._get_tsv_url(name, tds)
                 networks.append(Dataset(name=name,
                                         category=tds[2].div.get('title'),
-                                        directed=None,
+                                        directed='directed' in tds[2].find_all('img')[2].get('title').lower(),
+                                        bipartite='bipartite' in tds[2].find_all('img')[2].get('title').lower(),
                                         num_nodes=int(tds[3].text.replace(',', '')),
                                         num_edges=int(tds[4].text.strip('\n').replace(',', '')),
                                         tsv_url=tsv_url))
@@ -214,7 +222,8 @@ class KonectUniStrategy(DatasetsStrategy):
                 tsv_url = self._get_tsv_url(tds)
                 networks.append(Dataset(name=tds[1].a.get('href').replace('/', ''),
                                         category=tds[2].span.text,
-                                        directed=tds[3].a.img.get('title').startswith('Directed'),
+                                        directed='directed' in tds[3].a.img.get('title').lower(),
+                                        bipartite='bipartite' in tds[3].a.img.get('title').lower(),
                                         num_nodes=int(tds[6].text.replace(',', '')),
                                         num_edges=int(tds[7].text.replace(',', '')),
                                         tsv_url=tsv_url))
@@ -308,15 +317,31 @@ def build_network_from_out_konect(network_name: str, tsv_url: str, directed: boo
                             output_dir_name=output_dir_name)
 
     out_file = next(glob.iglob(f'{output_dir_name}/**/out.*', recursive=True))
+
     assert out_file, 'No out. file in the directory.'
+
     if directed:
         graph_class = nx.DiGraph
     else:
         graph_class = nx.Graph
-    g = nx.read_adjlist(out_file, create_using=graph_class, comments='%')
-    g.graph['name'] = network_name
 
-    return g
+    try:
+        g = nx.read_edgelist(out_file, create_using=graph_class, comments='%')
+        g.graph['name'] = network_name
+
+        return g
+
+    except TypeError:
+
+        try:
+            g = nx.read_weighted_edgelist(out_file, create_using=graph_class, comments='%')
+            g.graph['name'] = network_name
+
+            return g
+
+        except TypeError:
+
+            return None
 
 
 def precision_at_k(y_true, y_pred, k=1):
