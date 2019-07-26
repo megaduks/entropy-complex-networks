@@ -84,6 +84,25 @@ class UtilsTests(unittest.TestCase):
         with self.assertRaises(AssertionError):
             utils.theil(x)
 
+    def test_normalize_dict(self):
+        d = {0: 10, 1: 30, 2: 10}
+
+        self.assertEqual(sum(utils.normalize_dict(d).values()), 1.0)
+        self.assertEqual(list(utils.normalize_dict(d).values()), [0.2, 0.6, 0.2])
+
+    def test_normalize_dict_with_factor(self):
+        d = {0: 10, 1: 30, 2: 10}
+
+        self.assertEqual(sum(utils.normalize_dict(d, target=2).values()), 2.0)
+        self.assertEqual(list(utils.normalize_dict(d, target=2).values()), [0.4, 1.2, 0.4])
+
+    def test_normalize_dict_without_dict(self):
+
+        d = [0, 1, 2]
+
+        with self.assertRaises(AssertionError):
+            utils.normalize_dict(d)
+
 
 if __name__ == '__main__':
     unittest.main()
