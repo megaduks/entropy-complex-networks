@@ -53,24 +53,36 @@ class UtilsTests(unittest.TestCase):
         self.assertEqual(utils.gini(x), 0.5)
 
     def test_gini_constant_values(self):
-
         x = np.array([1, 1, 1, 1, 1, 1])
 
         self.assertEqual(utils.gini(x), 0.0)
 
     def test_gini_only_zeros(self):
-
         x = np.array([0, 0, 0, 0])
 
         self.assertEqual(utils.gini(x), 0.0)
 
-
     def test_gini_not_an_arrayt(self):
-
         x = 0
 
         with self.assertRaises(AssertionError):
             utils.gini(x)
+
+    def test_theil_only_zeros(self):
+        x = np.array([0, 0, 0, 0])
+
+        self.assertEqual(utils.theil(x), 0.0)
+
+    def test_theil_array(self):
+        x = np.array([0, 0, 0, 10])
+
+        self.assertGreater(utils.theil(x), 1.0)
+
+    def test_theil_not_an_array(self):
+        x = 0
+
+        with self.assertRaises(AssertionError):
+            utils.theil(x)
 
 
 if __name__ == '__main__':
