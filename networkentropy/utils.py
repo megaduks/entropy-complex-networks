@@ -28,12 +28,12 @@ def gini(x: np.array) -> float:
     Computes the value of the Gini index of a distribution
 
     params:
-    :param X: array with the distribution
+    :param x: array with the distribution
 
     :returns: the value of the Gini index
     """
 
-    assert isinstance(x, np.ndarray), 'x must by an array'
+    assert isinstance(x, np.ndarray), 'x must be an array'
 
     if x.sum() == 0:
         gini_index = 0
@@ -49,3 +49,26 @@ def gini(x: np.array) -> float:
         gini_index = 0.5 * rmad
 
     return gini_index
+
+
+def theil(x: np.array) -> float:
+    """
+    Computes the Theil index of the inequality of distribution (https://en.wikipedia.org/wiki/Theil_index)
+
+    params:
+    :param x: array with the distribution
+
+    :returns: the value of the Theil index of the distribution
+    """
+
+    assert isinstance(x, np.ndarray), 'x must be an array'
+
+    mi = x.mean()
+    N = len(x)
+
+    if mi == 0:
+        theil_index = 0
+    else:
+        theil_index = (1 / N) * np.nansum((x / mi) * np.log(x / mi))
+
+    return theil_index
