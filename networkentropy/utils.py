@@ -1,5 +1,5 @@
 import numpy as np
-from typing import List
+from typing import List, Dict
 
 
 def precision_at_k(y_true: List, y_pred: List, k: int=1) -> float:
@@ -72,3 +72,23 @@ def theil(x: np.array) -> float:
         theil_index = (1 / N) * np.nansum((x / mi) * np.log(x / mi))
 
     return theil_index
+
+def normalize_dict(d: Dict, target: float = 1.0) -> Dict:
+    """
+    Normalizes the values in the dictionary so that they sum up to factor
+
+    :params
+    :param d: dict to be normalized
+    :param factor: value to which all values in the dictionary should sum up to
+    :returns: normalized dictionary
+    """
+
+    assert isinstance(d, Dict), 'd must be a dictionary'
+    raw = sum(d.values())
+
+    if raw > 0:
+        factor = target / raw
+    else:
+        factor = target
+
+    return {key: value * factor for key, value in d.items()}
