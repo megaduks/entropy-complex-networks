@@ -226,14 +226,9 @@ def get_energy_gradients(g: nx.Graph, energy_dist: List[float] = None, mode: str
             energy_dist = get_laplacian_spectrum(g)
 
     result = {
-        n: {
-            nn: energy_dist[n] - energy_dist[nn]
-            for nn
-            in nx.ego_graph(G=g, n=n)
-            if nn != n
-        }
-        for n
-        in g.nodes
+        (n, m) : {energy_dist[m] - energy_dist[n]}
+        for n,m
+        in g.edges
     }
 
     return result
