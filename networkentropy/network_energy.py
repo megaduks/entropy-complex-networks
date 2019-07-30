@@ -207,6 +207,47 @@ def graph_energy_centrality(g: nx.Graph, radius: int = 1, normalized: bool = Fal
     return result
 
 
+def graph_energy_pagerank(g: nx.Graph,
+                          radius: int = 1,
+                          normalized: bool = False,
+                          mode: str = 'graph',
+                          alpha: float = 0.85,
+                          max_iter: int = 10000,
+                          tol: float = 1.0e-6
+                          ) -> Dict:
+    """
+    Computes the eigenvector centrality index for each vertex by computing the pagerank of each vertex
+    using vertex energy as the value of the personalization parameter
+
+    :param g: input graph
+    :param radius: radius of the egocentric network
+    :param normalized: if True, the result is normalized to sum to 1
+    :param mode: string representing type of graph energy, possible values include 'graph', 'randic', 'laplacian'
+    :param alpha: probability of continuing the random walk
+    :param max_iter: maximum number of iterations for the random walk computation
+    :param tol: tolerance parameter for random walk divergence
+
+    :return: dictionary with eigenvalue centralities for each vertex
+    """
+
+    assert mode in ['graph', 'randic', 'laplacian'], "supported modes are: 'graph', 'randic', 'laplacian'"
+
+    if mode == 'graph':
+        energy_dist = get_graph_spectrum(g, radius=radius)
+    elif mode == 'randic':
+        energy_dist = get_randic_spectrum(g, radius=radius)
+    elif mode == 'laplacian':
+        energy_dist = get_laplacian_spectrum(g, radius=radius)
+
+    result = nx.pagerank(g, personalization=energy_dist, alpha=alpha, max_iter=max_iter, tol=tol)
+
+    if normalized:
+        s = sum(result.values())
+        result = { n: v/s for n,v in result.items() }
+
+    return result
+
+
 def get_energy_gradients(g: nx.Graph, energy_dist: List[float] = None, mode: str = 'graph') -> Dict:
     """
     Compute gradients of a given graph energy for all nodes
@@ -214,6 +255,7 @@ def get_energy_gradients(g: nx.Graph, energy_dist: List[float] = None, mode: str
     :param g: input graph
     :param energy_dist: precomputed distribution of energy in the graph g
     :param mode: string representing type of graph energy, possible values include 'graph', 'randic', 'laplacian'
+
     :return: dictionary with energy differences for each node
     """
 
@@ -240,6 +282,7 @@ def get_max_energy_gradient(energy_gradients: Dict) -> List[int]:
     the label of node's neighbor with the maximum energy gradient
 
     :param energy_gradients: dictionary with all energy gradients
+
     :return: list of nodes which represent the maximum gradient of graph energy
     """
 
@@ -253,34 +296,48 @@ def get_max_energy_gradient(energy_gradients: Dict) -> List[int]:
     return result
 
 
-def gradient_centrality(g: nx.Graph, normalized: bool = False, mode: str = 'graph') -> Dict:
+def gradient_centrality(g: nx.Graph,
+                        normalized: bool = False,
+                        radius: int = 1,
+                        mode: str = 'graph',
+                        alpha: float = 0.85,
+                        max_iter: int = 10000,
+                        tol: float = 1.0e-6
+                        ) -> Dict:
     """
     Computes the stationary distribution of the random walk directed by the gradient of graph energy
 
     :param g: input graph
     :param normalized: if True, the result is normalized to sum to 1
+    :param radius: radius of the egocentric network
     :param mode: string representing type of graph energy, possible values include 'graph', 'randic', 'laplacian'
+    :param alpha: probability of continuing the random walk
+    :param max_iter: maximum number of iterations for the random walk computation
+    :param tol: tolerance parameter for random walk divergence
+
     :return: list of centrality scores for each node
     """
 
+    assert mode in ['graph', 'randic', 'laplacian'], "supported modes are: 'graph', 'randic', 'laplacian'"
+
+    delta = 1.0e-4 # small value to be used instead of negative gradients
+
     if mode == 'graph':
-        gs = get_graph_spectrum(g)
+        gs = get_graph_spectrum(g, radius=radius)
     elif mode == 'randic':
-        gs = get_randic_spectrum(g)
+        gs = get_randic_spectrum(g, radius=radius)
     elif mode == 'laplacian':
-        gs = get_laplacian_spectrum(g)
-    else:
-        raise ValueError("supported modes are: 'graph', 'randic', 'laplacian'")
+        gs = get_laplacian_spectrum(g, radius=radius)
 
     gradients = {
         (u, v): gs[u] - gs[v]
-        if (gs[u] - gs[v]) > 0 else 0.0
+        if (gs[u] - gs[v]) > 0 else delta
         for (u, v)
         in g.edges
     }
 
     nx.set_edge_attributes(g, gradients, 'gradients')
-    result = nx.pagerank(g, weight='gradients')
+    result = nx.pagerank(g, weight='gradients', alpha=alpha, max_iter=max_iter, tol=tol)
 
     if normalized:
         s = sum(result.values())
