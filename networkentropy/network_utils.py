@@ -8,7 +8,7 @@ import pandas as pd
 import copy
 import glob
 
-from collections import namedtuple
+from collections import namedtuple, UserDict
 from typing import List, Iterable, Optional
 from urllib.request import HTTPError
 from bs4 import BeautifulSoup
@@ -26,6 +26,21 @@ TSV_URL = 'tsv_url'
 Dataset = namedtuple('Dataset', [NAME, CATEGORY, DIRECTED, BIPARTITE, NUM_NODES, NUM_EDGES, TSV_URL])
 
 # TODO: re-implement filtering of networks because it does not work
+
+
+class NetworkDict(UserDict):
+    """
+    Intercepts __setitem__ method to assign dict key as graph name
+    """
+    def __setitem__(self, name, method):
+
+        def wrapper(*args):
+            result = method(*args)
+            result.graph['name'] = name
+            return result
+
+        super(NetworkDict, self).__setitem__(name, wrapper)
+
 
 class DatasetsStrategy:
     def get_networks_url(self) -> str:
@@ -342,23 +357,3 @@ def build_network_from_out_konect(network_name: str, tsv_url: str, directed: boo
         except TypeError:
 
             return None
-
-
-def precision_at_k(y_true, y_pred, k=1):
-    """
-    Computes precision@k metric for ranking lists
-
-    params:
-    :param y_true: list of real ranking of items
-    :param y_pred: list of predicted ranking of items
-    :param k: cut off value
-
-
-    """
-
-    assert isinstance(k, int), 'k must be an integer'
-    assert (k > 0), 'k must be positive'
-    assert isinstance(y_pred, List), 'y_pred must be a list'
-
-    common = set(y_pred[:k]).intersection(set(y_true[:k]))
-    return len(common) / k
