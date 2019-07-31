@@ -109,6 +109,9 @@ def get_laplacian_energy(g: nx.Graph) -> float:
     :return: float: Laplacian energy of a graph
     """
 
+    if nx.is_directed(g):
+        g = nx.to_undirected(g)
+
     L = nx.laplacian_matrix(g).todense()
     eigvals = scipy.linalg.eigvals(L).real
     const = nx.number_of_edges(g) * 2 / nx.number_of_nodes(g)
@@ -233,11 +236,14 @@ def graph_energy_pagerank(g: nx.Graph,
     assert mode in ['graph', 'randic', 'laplacian'], "supported modes are: 'graph', 'randic', 'laplacian'"
 
     if mode == 'graph':
-        energy_dist = get_graph_spectrum(g, radius=radius)
+        energy_dist = graph_energy_centrality(g, radius=radius)
     elif mode == 'randic':
-        energy_dist = get_randic_spectrum(g, radius=radius)
+        energy_dist = randic_centrality(g, radius=radius)
     elif mode == 'laplacian':
-        energy_dist = get_laplacian_spectrum(g, radius=radius)
+        energy_dist = laplacian_centrality(g, radius=radius)
+
+    if sum(energy_dist.values()) == 0:
+        return energy_dist
 
     result = nx.pagerank(g, personalization=energy_dist, alpha=alpha, max_iter=max_iter, tol=tol)
 
@@ -323,15 +329,15 @@ def gradient_centrality(g: nx.Graph,
     delta = 1.0e-4 # small value to be used instead of negative gradients
 
     if mode == 'graph':
-        gs = get_graph_spectrum(g, radius=radius)
+        energy = graph_energy_centrality(g, radius=radius)
     elif mode == 'randic':
-        gs = get_randic_spectrum(g, radius=radius)
+        energy = randic_centrality(g, radius=radius)
     elif mode == 'laplacian':
-        gs = get_laplacian_spectrum(g, radius=radius)
+        energy = laplacian_centrality(g, radius=radius)
 
     gradients = {
-        (u, v): gs[u] - gs[v]
-        if (gs[u] - gs[v]) > 0 else delta
+        (u, v): energy[u] - energy[v]
+        if (energy[u] - energy[v]) > 0 else delta
         for (u, v)
         in g.edges
     }
