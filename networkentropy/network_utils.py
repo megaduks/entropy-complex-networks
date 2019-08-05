@@ -25,8 +25,6 @@ TSV_URL = 'tsv_url'
 
 Dataset = namedtuple('Dataset', [NAME, CATEGORY, DIRECTED, BIPARTITE, NUM_NODES, NUM_EDGES, TSV_URL])
 
-# TODO: re-implement filtering of networks because it does not work
-
 
 class NetworkDict(UserDict):
     """

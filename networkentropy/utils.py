@@ -30,7 +30,7 @@ def gini(x: np.array) -> float:
     params:
     :param x: array with the distribution
 
-    :returns: the value of the Gini index
+    :returns the value of the Gini index
     """
 
     assert isinstance(x, np.ndarray), 'x must be an array'
@@ -58,7 +58,7 @@ def theil(x: np.array) -> float:
     params:
     :param x: array with the distribution
 
-    :returns: the value of the Theil index of the distribution
+    :returns the value of the Theil index of the distribution
     """
 
     assert isinstance(x, np.ndarray), 'x must be an array'
@@ -80,7 +80,8 @@ def normalize_dict(d: Dict, target: float = 1.0) -> Dict:
     :params
     :param d: dict to be normalized
     :param factor: value to which all values in the dictionary should sum up to
-    :returns: normalized dictionary
+
+    :returns normalized dictionary
     """
 
     assert isinstance(d, Dict), 'd must be a dictionary'
