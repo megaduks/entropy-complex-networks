@@ -1,7 +1,17 @@
 import unittest
 import os
+import shutil
 
 from .. import network_utils
+
+BRUNSON_SOUTH_AFRICA_TAR_BZ = 'brunson_south-africa.tar.bz2'
+
+BRUNSON_SOUTH_AFRICA_NAME = 'brunson_south-africa'
+
+BRUNSON_SOUTH_AFRICA_TSV_URL = 'http://konect.uni-koblenz.de/downloads/tsv/brunson_south-africa.tar.bz2'
+
+TESTS_DATA_PATH = 'networkentropy/tests/data/'
+
 
 class UtilsTests(unittest.TestCase):
 
@@ -9,79 +19,40 @@ class UtilsTests(unittest.TestCase):
         unittest.TestCase.__init__(self, *args, **kwargs)
 
     def test_read_avalilable_datasets_konect(self):
-
-        networks = network_utils.read_avalilable_datasets_konect()
+        networks = network_utils.read_available_datasets_konect(name='konect.uni')
 
         self.assertGreater(len(networks), 0)
-        
+
     def test_download_tsv_dataset_konect(self):
-
-        network_name = 'brunson_south-africa'
-        dir_name = '/home/mikolaj/Research/entropy-complex-networks/networkentropy/data/'
-
-        network_utils.download_tsv_dataset_konect(network_name=network_name, dir_name=dir_name)
-
-        self.assertTrue(os.path.exists(dir_name + network_name + '.tar.bz2'))
+        output_file_name = f'{BRUNSON_SOUTH_AFRICA_NAME}-test'
+        output_file_name_tar_bz = f'{TESTS_DATA_PATH}{output_file_name}.tar.bz2'
+        try:
+            network_utils.download_tsv_dataset_konect(output_file_name=output_file_name,
+                                                      tsv_url=BRUNSON_SOUTH_AFRICA_TSV_URL,
+                                                      dir_name=TESTS_DATA_PATH)
+            self.assertTrue(os.path.exists(output_file_name_tar_bz))
+        finally:
+            shutil.rmtree(output_file_name_tar_bz, ignore_errors=True)
 
     def test_unpack_tar_bz2_file(self):
-
-        file_name = 'brunson_south-africa.tar.bz2'
-        dir_name = '/home/mikolaj/Research/entropy-complex-networks/networkentropy/data/'
-
-        network_utils.unpack_tar_bz2_file(file_name=file_name, dir_name=dir_name)
-
-        self.assertTrue(os.path.exists(dir_name + 'network_' + file_name.replace('.tar.bz2','')))
+        output_dir = f'{TESTS_DATA_PATH}{BRUNSON_SOUTH_AFRICA_NAME}-test'
+        try:
+            network_utils.unpack_tar_bz2_file(file_name=BRUNSON_SOUTH_AFRICA_TAR_BZ,
+                                              dir_name=TESTS_DATA_PATH,
+                                              output_dir_name=output_dir)
+            self.assertTrue(len(os.listdir(output_dir)) > 0)
+        finally:
+            shutil.rmtree(output_dir, ignore_errors=True)
 
     def test_build_network_from_out_konect(self):
-
-        network_name = 'brunson_south-africa'
-        dir_name = '/home/mikolaj/Research/entropy-complex-networks/networkentropy/data/'
-
-        g = network_utils.build_network_from_out_konect(network_name=network_name, dir_name=dir_name)
+        g = network_utils.build_network_from_out_konect(network_name=BRUNSON_SOUTH_AFRICA_NAME,
+                                                        tsv_url=BRUNSON_SOUTH_AFRICA_TSV_URL,
+                                                        directed=False,
+                                                        dir_name=TESTS_DATA_PATH)
 
         self.assertTrue(g.number_of_nodes() > 0)
 
-    def test_build_network_from_out_konect_with_min_size_limit(self):
-
-        network_name = 'brunson_south-africa'
-        dir_name = '/home/mikolaj/Research/entropy-complex-networks/networkentropy/data/'
-
-        g = network_utils.build_network_from_out_konect(network_name=network_name,
-                                                dir_name=dir_name,
-                                                num_nodes=11,
-                                                num_edges=13,
-                                                min_size=30)
-
-        self.assertTrue(g is None)
-
-    def test_build_network_from_out_konect_with_max_size_limit(self):
-
-        network_name = 'brunson_south-africa'
-        dir_name = '/home/mikolaj/Research/entropy-complex-networks/networkentropy/data/'
-
-        g = network_utils.build_network_from_out_konect(network_name=network_name,
-                                                dir_name=dir_name,
-                                                num_nodes=11,
-                                                num_edges=30,
-                                                max_size=10)
-
-        self.assertTrue(g is None)
-
-    def test_build_network_from_out_konect_with_max_density_limit(self):
-
-        network_name = 'brunson_south-africa'
-        dir_name = '/home/mikolaj/Research/entropy-complex-networks/networkentropy/data/'
-
-        g = network_utils.build_network_from_out_konect(network_name=network_name,
-                                                dir_name=dir_name,
-                                                num_nodes=11,
-                                                num_edges=13,
-                                                max_density=0.1)
-
-        self.assertTrue(g is None)
-
     def test_precision_at_k_full_coverage(self):
-
         y_true = [1, 2, 3, 4, 5]
         y_pred = [1, 2, 3, 8, 9]
         k = 3
@@ -119,6 +90,4 @@ class UtilsTests(unittest.TestCase):
 
 
 if __name__ == '__main__':
-
     unittest.main()
-
