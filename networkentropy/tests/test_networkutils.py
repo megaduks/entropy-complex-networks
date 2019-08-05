@@ -4,24 +4,52 @@ import shutil
 
 from .. import network_utils
 
+from typing import Iterable
+
 BRUNSON_SOUTH_AFRICA_TAR_BZ = 'brunson_south-africa.tar.bz2'
-
 BRUNSON_SOUTH_AFRICA_NAME = 'brunson_south-africa'
-
 BRUNSON_SOUTH_AFRICA_TSV_URL = 'http://konect.uni-koblenz.de/downloads/tsv/brunson_south-africa.tar.bz2'
-
 TESTS_DATA_PATH = 'networkentropy/tests/data/'
 
 
-class UtilsTests(unittest.TestCase):
+class NetworkUtilsTests(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
         unittest.TestCase.__init__(self, *args, **kwargs)
 
-    def test_read_avalilable_datasets_konect(self):
-        networks = network_utils.read_available_datasets_konect(name='konect.uni')
+    def test_read_avalilable_datasets_konect_cc(self):
+        networks = network_utils.read_available_datasets_konect(name='konect.cc').to_list()
 
         self.assertGreater(len(networks), 0)
+
+    def test_read_avalilable_datasets_konect_uni(self):
+        networks = network_utils.read_available_datasets_konect(name='konect.uni').to_list()
+
+        self.assertGreater(len(networks), 0)
+
+    def test_is_iterable_cc(self):
+        networks = network_utils.read_available_datasets_konect(name='konect.cc')
+
+        self.assertIsInstance(networks, Iterable)
+
+    def test_is_iterable_uni(self):
+        networks = network_utils.read_available_datasets_konect(name='konect.uni')
+
+        self.assertIsInstance(networks, Iterable)
+
+    def test_filter_by_number_of_nodes_cc(self):
+        MAX_SIZE = 25
+        networks = network_utils.read_available_datasets_konect(name='konect.cc').filter(max_size=MAX_SIZE)
+        max_size = max([network_utils.Dataset(*g).num_nodes for g in networks])
+
+        self.assertLessEqual(max_size, MAX_SIZE)
+
+    def test_filter_by_number_of_nodes_uni(self):
+        MAX_SIZE = 25
+        networks = network_utils.read_available_datasets_konect(name='konect.uni').filter(max_size=MAX_SIZE)
+        max_size = max([network_utils.Dataset(*g).num_nodes for g in networks])
+
+        self.assertLessEqual(max_size, MAX_SIZE)
 
     def test_download_tsv_dataset_konect(self):
         output_file_name = f'{BRUNSON_SOUTH_AFRICA_NAME}-test'
@@ -50,43 +78,7 @@ class UtilsTests(unittest.TestCase):
                                                         directed=False,
                                                         dir_name=TESTS_DATA_PATH)
 
-        self.assertTrue(g.number_of_nodes() > 0)
-
-    def test_precision_at_k_full_coverage(self):
-        y_true = [1, 2, 3, 4, 5]
-        y_pred = [1, 2, 3, 8, 9]
-        k = 3
-
-        self.assertEqual(network_utils.precision_at_k(y_true=y_true, y_pred=y_pred, k=k), 1.0)
-
-    def test_precision_at_k_partial_coverage(self):
-        y_true = [1, 2, 3, 4, 5]
-        y_pred = [1, 2, 3, 8, 9]
-        k = 4
-
-        self.assertEqual(network_utils.precision_at_k(y_true=y_true, y_pred=y_pred, k=k), 0.75)
-
-    def test_precision_at_k_no_coverage(self):
-        y_true = [1, 2, 3, 4, 5]
-        y_pred = [9, 8, 7, 6, 5]
-        k = 3
-
-        self.assertEqual(network_utils.precision_at_k(y_true=y_true, y_pred=y_pred, k=k), 0.0)
-
-    def test_precision_at_k_empty_list(self):
-        y_true = [1, 2, 3, 4, 5]
-        y_pred = []
-        k = 3
-
-        self.assertEqual(network_utils.precision_at_k(y_true=y_true, y_pred=y_pred, k=k), 0.0)
-
-    def test_precision_at_k_no_list(self):
-        y_true = [1, 2, 3, 4, 5]
-        y_pred = None
-        k = 3
-
-        with self.assertRaises(AssertionError):
-            network_utils.precision_at_k(y_true=y_true, y_pred=y_pred, k=k)
+        self.assertTrue(g.number_of_nodes() == 6)
 
 
 if __name__ == '__main__':

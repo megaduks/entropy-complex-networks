@@ -8,7 +8,7 @@ import pandas as pd
 import copy
 import glob
 
-from collections import namedtuple
+from collections import namedtuple, UserDict
 from typing import List, Iterable, Optional
 from urllib.request import HTTPError
 from bs4 import BeautifulSoup
@@ -18,11 +18,26 @@ from requests import Response
 NAME = 'name'
 CATEGORY = 'category'
 DIRECTED = 'directed'
+BIPARTITE = 'bipartite'
 NUM_NODES = 'num_nodes'
 NUM_EDGES = 'num_edges'
 TSV_URL = 'tsv_url'
 
-Dataset = namedtuple('Dataset', [NAME, CATEGORY, DIRECTED, NUM_NODES, NUM_EDGES, TSV_URL])
+Dataset = namedtuple('Dataset', [NAME, CATEGORY, DIRECTED, BIPARTITE, NUM_NODES, NUM_EDGES, TSV_URL])
+
+
+class NetworkDict(UserDict):
+    """
+    Intercepts __setitem__ method to assign dict key as graph name
+    """
+    def __setitem__(self, name, method):
+
+        def wrapper(*args):
+            result = method(*args)
+            result.graph['name'] = name
+            return result
+
+        super(NetworkDict, self).__setitem__(name, wrapper)
 
 
 class DatasetsStrategy:
@@ -37,6 +52,7 @@ class Datasets:
     def __init__(self, datasets_strategy: DatasetsStrategy):
         self.datasets_strategy = datasets_strategy
         self.networks = pd.DataFrame()
+        self.current_iter = 0
 
         response = self._request_networks()
         if response.status_code != 200:
@@ -44,6 +60,19 @@ class Datasets:
         else:
             networks = self._get_networks_from_response(response)
             self.networks = self._map_to_df(networks)
+
+    def __len__(self):
+        return len(self.networks)
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.current_iter == len(self.networks):
+            raise StopIteration
+
+        self.current_iter += 1
+        return self.networks.iloc[self.current_iter-1]
 
     def _request_networks(self) -> Response:
         return requests.get(self._get_networks_url())
@@ -79,6 +108,7 @@ class Datasets:
                combine_queries: bool = False,
                categories: List[str] = None,
                directed: bool = None,
+               bipartite: bool = None,
                min_size: int = None,
                max_size: int = None,
                min_density: int = None,
@@ -91,6 +121,8 @@ class Datasets:
         :param query_expr: query expression, if specified and combine is False, other arguments are ignored
         :param combine_queries: specifies whether query_expr should be combined with other conditions (default is False)
         :param categories: categories to be included
+        :param directed: if True, only directed networks are included
+        :param bipartite: if True, only bipartite networks are included
         :param min_size: minimum number of nodes required in the network
         :param max_size: maximum number of nodes allowed in the network
         :param min_density: minimum density of network allowed
@@ -98,7 +130,7 @@ class Datasets:
         :param only_downloadable: if True, only datasets available to download will be included
         :return: Modified Datasets object
         """
-        args = [categories, directed, min_size, max_size, min_density, max_density, only_downloadable]
+        args = [categories, directed, bipartite, min_size, max_size, min_density, max_density, only_downloadable]
         if query_expr is None:
             query_expr = self._build_query(*args)
         elif combine_queries:
@@ -112,13 +144,15 @@ class Datasets:
         return datasets
 
     @staticmethod
-    def _build_query(categories, directed, min_size, max_size, min_density, max_density, only_downloadable,
+    def _build_query(categories, directed, bipartite, min_size, max_size, min_density, max_density, only_downloadable,
                      base_query=None) -> str:
         query = []
         if base_query is not None:
             query.append(f'({base_query})')
         if directed is not None:
             query.append(f'{DIRECTED} == @directed')
+        if bipartite is not None:
+            query.append(f'{BIPARTITE} == @bipartite')
         if categories is not None:
             query.append(f'{CATEGORY} in @categories')
         if min_size is not None:
@@ -166,7 +200,9 @@ class KonectCCStrategy(DatasetsStrategy):
                 tsv_url = self._get_tsv_url(name, tds)
                 networks.append(Dataset(name=name,
                                         category=tds[2].div.get('title'),
-                                        nun_nodes=int(tds[3].text.replace(',', '')),
+                                        directed='directed' in tds[2].find_all('img')[2].get('title').lower(),
+                                        bipartite='bipartite' in tds[2].find_all('img')[2].get('title').lower(),
+                                        num_nodes=int(tds[3].text.replace(',', '')),
                                         num_edges=int(tds[4].text.strip('\n').replace(',', '')),
                                         tsv_url=tsv_url))
         return networks
@@ -199,7 +235,8 @@ class KonectUniStrategy(DatasetsStrategy):
                 tsv_url = self._get_tsv_url(tds)
                 networks.append(Dataset(name=tds[1].a.get('href').replace('/', ''),
                                         category=tds[2].span.text,
-                                        directed=tds[3].a.img.get('title').startswith('Directed'),
+                                        directed='directed' in tds[3].a.img.get('title').lower(),
+                                        bipartite='bipartite' in tds[3].a.img.get('title').lower(),
                                         num_nodes=int(tds[6].text.replace(',', '')),
                                         num_edges=int(tds[7].text.replace(',', '')),
                                         tsv_url=tsv_url))
@@ -225,9 +262,9 @@ def create_datasets(name: str):
     return Datasets(strategy)
 
 
-def read_available_datasets_konect(name: str = 'konect.cc') -> List[object]:
+def read_available_datasets_konect(name: str = 'konect.cc') -> Datasets:
     datasets = create_datasets(name)
-    return datasets.to_list()
+    return datasets
 
 
 def download_tsv_dataset_konect(output_file_name: str, tsv_url: str, dir_name: str) -> Optional[str]:
@@ -274,6 +311,7 @@ def build_network_from_out_konect(network_name: str, tsv_url: str, directed: boo
 
     :param network_name: name of the network to build
     :param tsv_url: url to network data as tsv
+    :param directed: is network directed
     :param dir_name: name of the directory to download files to
     :return: NetworkX graph object, or None if the network is too large
     """
@@ -292,30 +330,28 @@ def build_network_from_out_konect(network_name: str, tsv_url: str, directed: boo
                             output_dir_name=output_dir_name)
 
     out_file = next(glob.iglob(f'{output_dir_name}/**/out.*', recursive=True))
+
     assert out_file, 'No out. file in the directory.'
+
     if directed:
         graph_class = nx.DiGraph
     else:
         graph_class = nx.Graph
-    g = nx.read_adjlist(out_file, create_using=graph_class, comments='%')
-    return g
 
+    try:
+        g = nx.read_edgelist(out_file, create_using=graph_class, comments='%')
+        g.graph['name'] = network_name
 
-def precision_at_k(y_true, y_pred, k=1):
-    """
-    Computes precision@k metric for ranking lists
+        return g
 
-    params:
-    :param y_true: list of real ranking of items
-    :param y_pred: list of predicted ranking of items
-    :param k: cut off value
+    except TypeError:
 
+        try:
+            g = nx.read_weighted_edgelist(out_file, create_using=graph_class, comments='%')
+            g.graph['name'] = network_name
 
-    """
+            return g
 
-    assert isinstance(k, int), 'k must be an integer'
-    assert (k > 0), 'k must be positive'
-    assert isinstance(y_pred, List), 'y_pred must be a list'
+        except TypeError:
 
-    common = set(y_pred[:k]).intersection(set(y_true[:k]))
-    return len(common) / k
+            return None
