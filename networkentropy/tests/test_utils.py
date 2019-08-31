@@ -103,6 +103,23 @@ class UtilsTests(unittest.TestCase):
         with self.assertRaises(AssertionError):
             utils.normalize_dict(d)
 
+    def test_load_iris(self):
+        X, y, description = utils.load_iris()
+
+        self.assertEqual(y.shape[0], X.shape[0]) # target vector aligned with the training set
+        self.assertTrue(np.alltrue(~np.isnan(X))) # there are no missing values in the dataset
+
+    def test_load_titanic(self):
+        X, y, description = utils.load_titanic()
+
+        self.assertEqual(y.shape[0], X.shape[0])  # target vector aligned with the training set
+
+    def test_load_lenses(self):
+        X, y, description = utils.load_lenses()
+
+        self.assertEqual(y.shape[0], X.shape[0])  # target vector aligned with the training set
+        self.assertTrue(np.alltrue(~np.isnan(X)))  # there are no missing values in the dataset
+
 
 if __name__ == '__main__':
     unittest.main()
