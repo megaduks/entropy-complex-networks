@@ -270,28 +270,33 @@ def load_breast_cancer_short() -> Tuple[np.ndarray, np.ndarray, List]:
 
 
 def _load_wine_quality():
-    wine_path = os.path.join(file_path, 'numerical/winequality-red.csv')
+    wine_path = os.path.join(file_path, 'data/numerical/winequality-red.csv')
     df = pd.read_csv(wine_path, header=0)
     return df
 
 
-def load_wine_quality_regression():
+def load_wine_quality(bins: Tuple=None, groups: List=None) -> Tuple[np.ndarray, np.ndarray, List]:
+    """
+    Loads Wine Quality dataset for regression
+
+    params:
+    :param bins: if provided with a tuple, the target feature will be discretized
+    :param groups: if provided, the list contains names of bins after discretization
+
+    :returns array-like training set, target feature, and a list of feature type descriptors
+    """
     description = 'numerical'
-    df = _load_wine_quality()
+
+    wine_path = os.path.join(file_path, 'data/numerical/winequality-red.csv')
+    df = pd.read_csv(wine_path, header=0)
+
+    if bins and groups:
+        df['quality'] = pd.cut(df['quality'], bins=bins, labels=groups)
+        df['quality'] = LabelEncoder().fit_transform(df['quality'])
+
     X = df.drop(['quality'], axis=1)
     y = df['quality']
-    return X.values, y.values, description
 
-
-def load_wine_quality_classification():
-    description = 'numerical'
-    df = _load_wine_quality()
-    bins = (2, 6.5, 8)
-    group_names = ['bad', 'good']
-    df['quality'] = pd.cut(df['quality'], bins=bins, labels=group_names)
-    df['quality'] = LabelEncoder().fit_transform(df['quality'])
-    X = df.drop(['quality'], axis=1)
-    y = df['quality']
     return X.values, y.values, description
 
 
@@ -329,8 +334,18 @@ def load_internet_ads_full():
     return X.values, y.values, description
 
 
-def _load_housing_prices():
-    houses_path = os.path.join(file_path, 'mixed/melbourne-housing.csv')
+def load_housing_prices_short() -> Tuple[np.ndarray, np.ndarray, List]:
+    """
+    Loads Melbourne Housing dataset
+
+    :returns array-like training set, target feature, and a list of feature type descriptors
+    """
+    description = ['numerical'] * 14
+    description[1] = 'categorical'
+
+    le = LabelEncoder()
+    houses_path = os.path.join(file_path, 'data/mixed/melbourne-housing.csv')
+
     df = pd.read_csv(houses_path, header=0)
     df['Date'] = pd.to_datetime(df['Date'], dayfirst=True)
     df.dropna(inplace=True)
@@ -339,19 +354,10 @@ def _load_housing_prices():
     min_days = df['Date'].min()
     days_since_start = [(x - min_days).days for x in df['Date']]
     df['Days'] = days_since_start
-    return df
-
-
-def load_housing_prices_short():
-    description = ['numerical'] * 14
-    # field Type
-    description[1] = 'categorical'
-
-    df = _load_housing_prices()
-    le = LabelEncoder()
     df['Type'] = le.fit_transform(df['Type'])
 
     X = df.drop(['Address', 'Price', 'Date', 'SellerG', 'Suburb', 'Method', 'CouncilArea', 'Regionname'], axis=1)
     y = df['Price']
+
     return X.values, y.values, description
 
