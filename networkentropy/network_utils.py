@@ -15,7 +15,7 @@ from bs4 import BeautifulSoup
 from bs4.element import ResultSet
 from requests import Response
 
-NAME = 'name'
+NETWORK_NAME = 'network_name'
 CATEGORY = 'category'
 DIRECTED = 'directed'
 BIPARTITE = 'bipartite'
@@ -23,7 +23,7 @@ NUM_NODES = 'num_nodes'
 NUM_EDGES = 'num_edges'
 TSV_URL = 'tsv_url'
 
-Dataset = namedtuple('Dataset', [NAME, CATEGORY, DIRECTED, BIPARTITE, NUM_NODES, NUM_EDGES, TSV_URL])
+Dataset = namedtuple('Dataset', [NETWORK_NAME, CATEGORY, DIRECTED, BIPARTITE, NUM_NODES, NUM_EDGES, TSV_URL])
 
 
 class NetworkDict(UserDict):
@@ -198,7 +198,7 @@ class KonectCCStrategy(DatasetsStrategy):
                 tds = row.find_all('td')
                 name = tds[1].a.get('href').replace('/', '')
                 tsv_url = self._get_tsv_url(name, tds)
-                networks.append(Dataset(name=name,
+                networks.append(Dataset(network_name=name,
                                         category=tds[2].div.get('title'),
                                         directed='directed' in tds[2].find_all('img')[2].get('title').lower(),
                                         bipartite='bipartite' in tds[2].find_all('img')[2].get('title').lower(),
@@ -233,7 +233,7 @@ class KonectUniStrategy(DatasetsStrategy):
             if row:
                 tds = row.find_all('td')
                 tsv_url = self._get_tsv_url(tds)
-                networks.append(Dataset(name=tds[1].a.get('href').replace('/', ''),
+                networks.append(Dataset(network_name=tds[1].a.get('href').replace('/', ''),
                                         category=tds[2].span.text,
                                         directed='directed' in tds[3].a.img.get('title').lower(),
                                         bipartite='bipartite' in tds[3].a.img.get('title').lower(),
