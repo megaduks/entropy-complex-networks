@@ -465,6 +465,7 @@ def load_car():
 
     Y = df.iloc[:, -1]
 
+
     return X.values, Y.values, description
 
 
