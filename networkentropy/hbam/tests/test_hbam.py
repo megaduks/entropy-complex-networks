@@ -18,7 +18,7 @@ class TestHBAMMethods(unittest.TestCase):
 
     def test_arr2int_input_too_large(self):
         input = np.random.rand(100)
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(ValueError):
             hbam.arr2int(input)
 
     def test_binarize(self):
