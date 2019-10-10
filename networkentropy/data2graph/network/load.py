@@ -6,10 +6,8 @@ from operator import itemgetter
 def _count_threshold_by_density(data, density):
     """
     Args:
-        data:
-            Array with weights
-        density:
-            Must be from 0 to 1
+        data: Array with weights
+        density: Must be from 0 to 1
     """
     v = data.shape[0]
 
