@@ -122,6 +122,22 @@ def get_laplacian_energy(g: object) -> float:
     return laplacian_energy
 
 
+def get_random_walk_laplacian_matrix(g: object) -> np.ndarray:
+    """
+    Extracts random walk Laplacian matrix of a graph
+
+    Args:
+        g: input graph
+
+    Returns: matrix representing random walk Laplacian
+    """
+    A = nx.adjacency_matrix(g).todense()
+    d = np.array([-(1/v) if v > 0 else 0 for k,v in nx.degree(g)]).reshape((-1,1))
+    D = np.diag(np.array([1 if v > 0 else 0 for k,v in nx.degree(g)]))
+
+    return np.multiply(d, A) + D
+
+
 def get_laplacian_spectrum(g: object, radius: int = 1) -> np.array:
     """
     Computes the spectrum of the Laplacian energy of a graph

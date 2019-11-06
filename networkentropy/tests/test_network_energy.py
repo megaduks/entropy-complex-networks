@@ -36,6 +36,21 @@ class NetworkEnergyTests(unittest.TestCase):
 
         self.assertAlmostEqual(expected_energy, computed_energy, places=5)
 
+    def test_random_walk_laplacian(self):
+
+        g = nx.Graph()
+        g.add_edges_from([(1,2),(1,3)])
+
+        expected_matrix = np.array([
+            [1, -0.5, -0.5],
+            [-1, 1, 0],
+            [-1, 0, 1]
+        ])
+
+        computed_matrix = network_energy.get_random_walk_laplacian_matrix(g)
+
+        self.assertTrue(np.isclose(expected_matrix, computed_matrix).all())
+
 if __name__ == '__main__':
 
     unittest.main()
