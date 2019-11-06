@@ -138,6 +138,21 @@ def get_random_walk_laplacian_matrix(g: object) -> np.ndarray:
     return np.multiply(d, A) + D
 
 
+def get_symmetric_normalized_laplacian_matrix(g: object) -> np.ndarray:
+    """
+    Extracts symmetric normalized Laplacian matrix of a graph
+
+    Args:
+        g: input graph
+
+    Returns: matrix representing the symmetric normalized Laplacian of a graph
+    """
+    L = nx.laplacian_matrix(g).todense()
+    d = np.array([1/np.sqrt(v) if v > 0 else 0 for k,v in nx.degree(g)])
+
+    return np.multiply(np.diag(d), L, np.diag(d))
+
+
 def get_laplacian_spectrum(g: object, radius: int = 1) -> np.array:
     """
     Computes the spectrum of the Laplacian energy of a graph
