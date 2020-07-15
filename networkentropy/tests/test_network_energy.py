@@ -37,33 +37,35 @@ class NetworkEnergyTests(unittest.TestCase):
 
         self.assertAlmostEqual(expected_energy, computed_energy, places=5)
 
-    def test_randic_centrality_normalization(self):
+    def test_random_walk_laplacian(self):
 
-        expected_sum_centrality = 1
-        computed_sum_centrality = sum(network_energy.randic_centrality(self.G, normalized=True).values())
+        g = nx.Graph()
+        g.add_edges_from([(1,2),(1,3)])
 
-        self.assertEqual(expected_sum_centrality, computed_sum_centrality)
+        expected_matrix = np.array([
+            [1, -0.5, -0.5],
+            [-1, 1, 0],
+            [-1, 0, 1]
+        ])
 
-    def test_laplacian_centrality_normalization(self):
+        computed_matrix = network_energy.get_random_walk_laplacian_matrix(g)
 
-        expected_sum_centrality = 1
-        computed_sum_centrality = sum(network_energy.laplacian_centrality(self.G, normalized=True).values())
+        self.assertTrue(np.isclose(expected_matrix, computed_matrix).all())
 
-        self.assertEqual(expected_sum_centrality, computed_sum_centrality)
+    def test_symmetric_normalized_laplacian(self):
 
-    def test_graph_centrality_normalization(self):
+        g = nx.Graph()
+        g.add_edges_from([(1,2),(1,3)])
 
-        expected_sum_centrality = 1
-        computed_sum_centrality = sum(network_energy.graph_energy_centrality(self.G, normalized=True).values())
+        expected_matrix = np.array([
+            [1.4142135, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1]
+        ])
 
-        self.assertEqual(expected_sum_centrality, computed_sum_centrality)
+        computed_matrix = network_energy.get_symmetric_normalized_laplacian_matrix(g)
 
-    def test_gradient_centrality_normalization(self):
-
-        expected_sum_centrality = 1
-        computed_sum_centrality = sum(network_energy.gradient_centrality(self.G, normalized=True).values())
-
-        self.assertEqual(expected_sum_centrality, computed_sum_centrality)
+        self.assertTrue(np.isclose(expected_matrix, computed_matrix).all())
 
 
 if __name__ == '__main__':
