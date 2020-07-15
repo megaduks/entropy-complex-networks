@@ -1,5 +1,17 @@
 import numpy as np
-from typing import List, Dict
+from typing import List, Dict, Tuple
+
+import os
+
+import numpy as np
+import pandas as pd
+import sklearn.datasets
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from datetime import date
+
+file_path = os.path.dirname(__file__)
+
+# TODO: finish typing data loader functions
 
 
 def precision_at_k(y_true: List, y_pred: List, k: int=1) -> float:
@@ -73,11 +85,12 @@ def theil(x: np.array) -> float:
 
     return theil_index
 
+
 def normalize_dict(d: Dict, target: float = 1.0) -> Dict:
     """
     Normalizes the values in the dictionary so that they sum up to factor
 
-    :params
+    params:
     :param d: dict to be normalized
     :param factor: value to which all values in the dictionary should sum up to
 
@@ -93,3 +106,258 @@ def normalize_dict(d: Dict, target: float = 1.0) -> Dict:
         factor = target
 
     return {key: value * factor for key, value in d.items()}
+
+
+def _load_diagnosis() -> Tuple[pd.DataFrame, List]:
+    """
+    Helper function to load Diagnosis dataset
+
+    :returns dataframe with the dataset and a list of feature type descriptors
+    """
+
+    diagnosis_path = os.path.join(file_path, 'data/mixed/diagnosis.data.txt')
+
+    description = ['numerical',
+                   'categorical',
+                   'categorical',
+                   'categorical',
+                   'categorical',
+                   'categorical']
+
+    names = ['Temperature',
+             'Num_nausea',
+             'Lumbar_pain',
+             'Urine_pushing',
+             'Micturition_pains',
+             'Burning_urethra',
+             'Inflammation',
+             'Nephritis']
+
+    types = {'Temperature': np.float64,
+             'Num_nausea': 'category',
+             'Lumbar_pain': 'category',
+             'Urine_pushing': 'category',
+             'Micturition_pains': 'category',
+             'Burning_urethra': 'category',
+             'Inflammation': 'category',
+             'Nephritis': 'category'}
+
+    dt = pd.read_csv(diagnosis_path, header=None, names=names, dtype=types, delim_whitespace=True)
+    dt_categorical = dt[[i for i in list(dt.columns) if i != 'Temperature']]
+    dt[[i for i in list(dt.columns) if i != 'Temperature']] = dt_categorical.apply(
+        LabelEncoder().fit_transform)
+
+    return dt, description
+
+
+def load_diagnosis_inflammation() -> Tuple[np.ndarray, np.ndarray, List]:
+    """
+    Loads Diagnosis dataset with the Inflammation feature as target
+
+    :returns array-like training set, target feature, and a list of feature type descriptors
+    """
+    dt, description = _load_diagnosis()
+
+    return dt.drop(['Nephritis', 'Inflammation'], axis=1).values, dt['Inflammation'].values, description
+
+
+def load_diagnosis_nephritis() -> Tuple[np.ndarray, np.ndarray, List]:
+    """
+    Loads Diagnosis dataset with the Nephritis feature as target
+
+    :returns array-like training set, target feature, and a list of feature type descriptors
+    """
+    dt, description = _load_diagnosis()
+
+    return dt.drop(['Nephritis', 'Inflammation'], axis=1).values, dt['Nephritis'].values, description
+
+
+def load_iris() -> Tuple[np.ndarray, np.ndarray, List]:
+    """
+    Loads Iris dataset
+
+    :returns array-like training set, target feature, and a list of feature type descriptors
+    """
+    description = ['numerical',
+                   'numerical',
+                   'numerical',
+                   'numerical']
+    iris = sklearn.datasets.load_iris()
+    X = iris.data.astype(np.float64)
+    y = iris.target.astype(np.float64)
+
+    return X, y, description
+
+
+def load_titanic() -> Tuple[np.ndarray, np.ndarray, List]:
+    """
+    Loads Titanic dataset
+
+    :returns array-like training set, target feature, and a list of feature type descriptors
+    """
+
+    le = LabelEncoder()
+
+    description = ['numerical',
+                   'numerical',
+                   'numerical',
+                   'numerical',
+                   'numerical',
+                   'numerical',
+                   'numerical']
+    titanic_path = os.path.join(file_path, 'data/mixed/titanic3.xls')
+    titanic_df = pd.read_excel(titanic_path, 'titanic3', index_col=None, na_values=['NA'])
+    titanic_df = titanic_df.drop(['body', 'cabin', 'boat'], axis=1)
+    titanic_df['home.dest'] = titanic_df['home.dest'].fillna('NA')
+    titanic_df = titanic_df.dropna()
+    titanic_df.sex = le.fit_transform(titanic_df.sex)
+    titanic_df.embarked = le.fit_transform(titanic_df.embarked)
+    titanic_df = titanic_df.drop(['name','ticket','home.dest'], axis=1)
+
+    X = titanic_df.drop(['survived'], axis=1).values
+    y = titanic_df['survived'].values
+
+    return X, y, description
+
+
+def load_lenses() -> Tuple[np.ndarray, np.ndarray, List]:
+    """
+    Loads Lenses dataset
+
+    :returns array-like training set, target feature, and a list of feature type descriptors
+    """
+    description = 'categorical'
+    lenses_path = os.path.join(file_path, 'data/categorical/lenses.data.txt')
+    df = pd.read_csv(lenses_path, header=None, delim_whitespace=True)
+    df = df.drop(df.columns[0], axis=1)
+
+    return df.drop(df.columns[-1], axis=1).values, df.iloc[:, -1].values, description
+
+
+def load_mushrooms() -> Tuple[np.ndarray, np.ndarray, List]:
+    """
+    Loads Mushrooms dataset
+
+    :returns array-like training set, target feature, and a list of feature type descriptors
+    """
+    description = 'categorical'
+    mushrooms_path = os.path.join(file_path, 'data/categorical/agaricus-lepiota.data.txt')
+    df = pd.read_csv(mushrooms_path, header=None)
+    df = df.apply(LabelEncoder().fit_transform)
+
+    return df.drop(df.columns[0], axis=1).values, df.iloc[:, 0].values, description
+
+
+def load_breast_cancer_short() -> Tuple[np.ndarray, np.ndarray, List]:
+    """
+    Loads Breast Cancer dataset
+
+    :returns array-like training set, target feature, and a list of feature type descriptors
+    """
+    description = 'numerical'
+    predictor_var = ['radius_mean', 'perimeter_mean', 'area_mean', 'compactness_mean', 'concave points_mean']
+
+    breast_path = os.path.join(file_path, 'data/numerical/breast-cancer-kaggle.csv')
+    df = pd.read_csv(breast_path, header=0)
+    df.drop('id', axis=1, inplace=True)
+    df.drop('Unnamed: 32', axis=1, inplace=True)
+    df['diagnosis'] = df['diagnosis'].map({'M': 1, 'B': 0})
+
+    X = df[predictor_var].values
+    y = df['diagnosis'].values
+
+    return X, y, description
+
+
+def _load_wine_quality():
+    wine_path = os.path.join(file_path, 'data/numerical/winequality-red.csv')
+    df = pd.read_csv(wine_path, header=0)
+    return df
+
+
+def load_wine_quality(bins: Tuple=None, groups: List=None) -> Tuple[np.ndarray, np.ndarray, List]:
+    """
+    Loads Wine Quality dataset for regression
+
+    params:
+    :param bins: if provided with a tuple, the target feature will be discretized
+    :param groups: if provided, the list contains names of bins after discretization
+
+    :returns array-like training set, target feature, and a list of feature type descriptors
+    """
+    description = 'numerical'
+
+    wine_path = os.path.join(file_path, 'data/numerical/winequality-red.csv')
+    df = pd.read_csv(wine_path, header=0)
+
+    if bins and groups:
+        df['quality'] = pd.cut(df['quality'], bins=bins, labels=groups)
+        df['quality'] = LabelEncoder().fit_transform(df['quality'])
+
+    X = df.drop(['quality'], axis=1)
+    y = df['quality']
+
+    return X.values, y.values, description
+
+
+def load_pima_diabetes():
+    description = 'numerical'
+    diabetes_path = os.path.join(file_path, 'numerical/diabetes.csv')
+    df = pd.read_csv(diabetes_path, header=0)
+    X = df.drop(['Outcome'], axis=1)
+    y = df['Outcome']
+    return X.values, y.values, description
+
+
+def _load_internet_ads():
+    ads_path = os.path.join(file_path, 'numerical/internet-advertisements.csv')
+    df = pd.read_csv(ads_path, low_memory=False)
+
+    # remove empties
+    df = df.applymap(lambda val: np.nan if str(val).strip() == '?' else val)
+    df = df.dropna()
+
+    # map classes
+    df['1558'] = df['1558'].map({'ad.': 1, 'nonad.': 0})
+    # remove the first column, it's useless
+    df = df.iloc[:, 1:].reset_index(drop=True)
+    return df
+
+
+def load_internet_ads_full():
+    description = 'numerical'
+    df = _load_internet_ads()
+    sc = StandardScaler()
+    X = df.iloc[:, :-1]
+    X = pd.DataFrame(sc.fit_transform(X), index=X.index, columns=X.columns)
+    y = df.iloc[:, -1]
+    return X.values, y.values, description
+
+
+def load_housing_prices_short() -> Tuple[np.ndarray, np.ndarray, List]:
+    """
+    Loads Melbourne Housing dataset
+
+    :returns array-like training set, target feature, and a list of feature type descriptors
+    """
+    description = ['numerical'] * 14
+    description[1] = 'categorical'
+
+    le = LabelEncoder()
+    houses_path = os.path.join(file_path, 'data/mixed/melbourne-housing.csv')
+
+    df = pd.read_csv(houses_path, header=0)
+    df['Date'] = pd.to_datetime(df['Date'], dayfirst=True)
+    df.dropna(inplace=True)
+
+    # change dates to numbers
+    min_days = df['Date'].min()
+    days_since_start = [(x - min_days).days for x in df['Date']]
+    df['Days'] = days_since_start
+    df['Type'] = le.fit_transform(df['Type'])
+
+    X = df.drop(['Address', 'Price', 'Date', 'SellerG', 'Suburb', 'Method', 'CouncilArea', 'Regionname'], axis=1)
+    y = df['Price']
+
+    return X.values, y.values, description
+

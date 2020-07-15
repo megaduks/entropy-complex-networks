@@ -97,11 +97,56 @@ class UtilsTests(unittest.TestCase):
         self.assertEqual(list(utils.normalize_dict(d, target=2).values()), [0.4, 1.2, 0.4])
 
     def test_normalize_dict_without_dict(self):
-
         d = [0, 1, 2]
 
         with self.assertRaises(AssertionError):
             utils.normalize_dict(d)
+
+    def test_load_iris(self):
+        X, y, description = utils.load_iris()
+
+        self.assertEqual(y.shape[0], X.shape[0]) # target vector aligned with the training set
+        self.assertTrue(np.alltrue(~np.isnan(X))) # there are no missing values in the dataset
+
+    def test_load_titanic(self):
+        X, y, description = utils.load_titanic()
+
+        self.assertEqual(y.shape[0], X.shape[0])  # target vector aligned with the training set
+
+    def test_load_lenses(self):
+        X, y, description = utils.load_lenses()
+
+        self.assertEqual(y.shape[0], X.shape[0])  # target vector aligned with the training set
+        self.assertTrue(np.alltrue(~np.isnan(X)))  # there are no missing values in the dataset
+
+    def test_load_breast_cancer(self):
+        X, y, description = utils.load_breast_cancer_short()
+
+        self.assertEqual(y.shape[0], X.shape[0])  # target vector aligned with the training set
+        self.assertTrue(np.alltrue(~np.isnan(X)))  # there are no missing values in the dataset
+
+    def test_load_housing_prices(self):
+        X, y, description = utils.load_housing_prices_short()
+
+        self.assertEqual(y.shape[0], X.shape[0])  # target vector aligned with the training set
+        self.assertTrue(np.alltrue(~np.isnan(X)))  # there are no missing values in the dataset
+
+    def test_load_wine_quality(self):
+        X, y, description = utils.load_wine_quality()
+
+        self.assertEqual(y.shape[0], X.shape[0])  # target vector aligned with the training set
+        self.assertTrue(np.alltrue(~np.isnan(X)))  # there are no missing values in the dataset
+        self.assertGreater(len(np.unique(y)), 3)
+
+    def test_load_wine_quality_with_binning(self):
+        bins = (2, 4.5, 6)
+        groups = ['bad','good']
+
+        X, y, description = utils.load_wine_quality(bins=bins, groups=groups)
+
+        self.assertEqual(y.shape[0], X.shape[0])  # target vector aligned with the training set
+        self.assertTrue(np.alltrue(~np.isnan(X)))  # there are no missing values in the dataset
+        self.assertEqual(len(np.unique(y)), 2)
 
 
 if __name__ == '__main__':
