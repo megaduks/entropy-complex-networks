@@ -5,14 +5,14 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 
-from node2vec import Node2Vec
 from scipy.stats import ks_2samp
 
 from networkentropy import network_energy as ne
 from networkentropy.embed import node2vec
 
 
-# TODO: change sample_ratio to accept either an int (absolute) or float (relative)
+#TODO: change sample_ratio to accept either an int (absolute) or float (relative)
+#TODO: add sampling from embeddings computed on walks driven by graph energy gradients
 
 
 def random_node(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
@@ -114,41 +114,105 @@ def random_energy_gradient(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
     return nx.subgraph(graph, sample_nodes)
 
 
-def random_embedding(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
+def random_graph_energy(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
     """
-    Samples a graph by drawing random vectors from the embedding matrix
+    Samples a graph by drawing a sample of nodes with the probability of drawing a node being
+    proportional to node's centrality computed from graph energy (energy of node's neighborhood)
 
     :param graph: input graph
-    :param sample_ratio: percentage of the original graph nodes to be sampled
+    :param sample_ratio: percentage of the original nodes to be sampled
     :return: a random subgraph
     """
 
     assert 0 <= sample_ratio <= 1, 'sample_ratio must be between [0, 1]'
 
-    # embedded_graph = Node2Vec(graph, workers=7, quiet=True, p=1, q=0.5, num_walks=1000).fit()
-    embedded_graph = node2vec(graph, walk_number=100)
+    num_nodes = int(sample_ratio * nx.number_of_nodes(graph))
+    graph_energy_sum = sum(dict(ne.graph_energy_centrality(graph)).values())
+    graph_energy_probs = [p / graph_energy_sum for p in dict(ne.graph_energy_centrality(graph)).values()]
+    sample_nodes = np.random.choice(graph.nodes, size=num_nodes, replace=False, p=graph_energy_probs)
+
+    return nx.subgraph(graph, sample_nodes)
+
+
+def random_laplacian_energy(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
+    """
+    Samples a graph by drawing a sample of nodes with the probability of drawing a node being
+    proportional to node's centrality computed from the Laplacian energy of node's neighborhood
+
+    :param graph: input graph
+    :param sample_ratio: percentage of the original nodes to be sampled
+    :return: a random subgraph
+    """
+
+    assert 0 <= sample_ratio <= 1, 'sample_ratio must be between [0, 1]'
+
+    num_nodes = int(sample_ratio * nx.number_of_nodes(graph))
+    laplacian_energy_sum = sum(dict(ne.laplacian_centrality(graph)).values())
+    laplacian_energy_probs = [p / laplacian_energy_sum for p in dict(ne.laplacian_centrality(graph)).values()]
+    sample_nodes = np.random.choice(graph.nodes, size=num_nodes, replace=False, p=laplacian_energy_probs)
+
+    return nx.subgraph(graph, sample_nodes)
+
+
+def random_randic_energy(graph: nx.Graph, sample_ratio: float) -> nx.Graph:
+    """
+    Samples a graph by drawing a sample of nodes with the probability of drawing a node being
+    proportional to node's centrality computed from the Randić energy of node's neighborhood
+
+    :param graph: input graph
+    :param sample_ratio: percentage of the original nodes to be sampled
+    :return: a random subgraph
+    """
+
+    assert 0 <= sample_ratio <= 1, 'sample_ratio must be between [0, 1]'
+
+    num_nodes = int(sample_ratio * nx.number_of_nodes(graph))
+    randic_energy_sum = sum(dict(ne.randic_centrality(graph)).values())
+    randic_energy_probs = [p / randic_energy_sum for p in dict(ne.randic_centrality(graph)).values()]
+    sample_nodes = np.random.choice(graph.nodes, size=num_nodes, replace=False, p=randic_energy_probs)
+
+    return nx.subgraph(graph, sample_nodes)
+
+
+def random_embedding(graph: nx.Graph, sample_ratio: float, walk_type: str = None) -> nx.Graph:
+    """
+    Samples a graph by drawing random vectors from the embedding matrix
+
+    :param graph: input graph
+    :param sample_ratio: percentage of the original graph nodes to be sampled
+    :param walk_type: name of energy for embedding computation, allowed values include 'graph', 'laplacian', 'randic',
+            defaunt None generates regular random walk embeddings
+    :return: a random subgraph
+    """
+
+    assert 0 <= sample_ratio <= 1, 'sample_ratio must be between [0, 1]'
+
+    if walk_type:
+        embedded_graph = node2vec(graph, walk_number=100, walk_type=walk_type)
+    else:
+        embedded_graph = node2vec(graph, walk_number=100)
+
     num_nodes = int(sample_ratio * nx.number_of_nodes(graph))
 
-    sample_nodes = list()
+    dimension_sums = np.apply_along_axis(np.sum, arr=np.abs(embedded_graph.wv.vectors), axis=0)
+    probabilities = np.abs(embedded_graph.wv.vectors) / dimension_sums
 
-    while len(sample_nodes) < num_nodes:
+    random_vector = np.array([])
 
-        dimension_sums = np.apply_along_axis(np.sum, arr=np.abs(embedded_graph.wv.vectors), axis=0)
-        probabilities = np.abs(embedded_graph.wv.vectors) / dimension_sums
+    for dim in range(embedded_graph.wv.vectors.shape[-1]):
+        col_values = np.squeeze(np.asarray(embedded_graph.wv.vectors[:, dim]))
+        col_probs = np.asarray(probabilities[:, dim])
+        # normalize probabilities to make sure they sum up to 1.0
+        col_probs /= col_probs.sum()
+        random_vector = np.append(random_vector, col_values[np.random.choice(col_values.size, size=1, p=col_probs)])
 
-        random_vector = np.array([])
+    pass
 
-        for dim in range(embedded_graph.wv.vectors.shape[-1]):
-            col_values = np.squeeze(np.asarray(embedded_graph.wv.vectors[:, dim]))
-            col_probs = np.asarray(probabilities[:, dim])
-            # normalize probabilities to make sure they sum up to 1.0
-            col_probs /= col_probs.sum()
-            random_vector = np.append(random_vector, np.random.choice(col_values, size=1, p=col_probs))
-
-        node, sim = embedded_graph.wv.similar_by_vector(random_vector, topn=1)[0]
-
-        if int(node) not in sample_nodes:
-            sample_nodes.append(int(node))
+    sample_nodes = [
+        int(node)
+        for (node, sim)
+        in embedded_graph.wv.similar_by_vector(random_vector, topn=num_nodes)
+    ]
 
     return nx.subgraph(graph, sample_nodes)
 
@@ -222,17 +286,30 @@ if __name__ == '__main__':
                 'pagerank': random_pagerank,
                 'edge': random_edge,
                 'node': random_node,
-                'embedding': random_embedding
+                'embedding': random_embedding,
+                'graph_embedding_walk': random_embedding,
+                'laplacian_embedding_walk': random_embedding,
+                'randic_embedding_walk': random_embedding,
+                'energy': random_graph_energy,
+                'laplacian': random_laplacian_energy,
+                'randic': random_randic_energy
             }
 
             # iterate over graph sampling methods
-            for f in functions:
+            for f in tqdm(functions):
 
                 # iterate over the size of graph sample
-                for j in range(1, 10):
+                for j in range(1, 20):
 
                     # sample graph according to the sampling function
                     sg = functions[f](g, sample_ratio=j/100)
+
+                    if f == 'graph_embedding_walk':
+                        sg = functions[f](g, sample_ratio=j/100, walk_type='graph')
+                    elif f == 'laplacian_embedding_walk':
+                        sg = functions[f](g, sample_ratio=j/100, walk_type='laplacian')
+                    elif f == 'randic_embedding_walk':
+                        sg = functions[f](g, sample_ratio=j/100, walk_type='randic')
 
                     # check if sampling returned any graph
                     if sg:

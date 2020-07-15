@@ -25,7 +25,7 @@ def get_randic_matrix(g: nx.Graph) -> np.array:
     D = nx.degree(g)
 
     randic_values = [1 / np.sqrt(D[v] * D[w]) if g.has_edge(v, w) else 0 for (v, w) in product(g.nodes, g.nodes)]
-    randic_matrix = np.array(randic_values).reshape(g.number_of_nodes(), g.number_of_nodes())
+    randic_matrix = np.asarray(randic_values).reshape(g.number_of_nodes(), g.number_of_nodes())
 
     return randic_matrix
 
@@ -274,9 +274,14 @@ def get_energy_gradients(g: nx.Graph, energy_dist: List[float] = None, mode: str
             energy_dist = get_laplacian_spectrum(g)
 
     result = {
-        (n, m) : {energy_dist[m] - energy_dist[n]}
-        for n,m
-        in g.edges
+        n: {
+            nn: energy_dist[nn] - energy_dist[n]
+            for nn
+            in nx.ego_graph(G=g, n=n)
+            if nn != n
+        }
+        for n
+        in g.nodes
     }
 
     return result
@@ -336,17 +341,13 @@ def gradient_centrality(g: nx.Graph,
         energy = laplacian_centrality(g, radius=radius)
 
     gradients = {
-        (u, v): energy[u] - energy[v]
-        if (energy[u] - energy[v]) > 0 else delta
+        (u, v): gs[u] - gs[v]
+        if (gs[u] - gs[v]) > 0 else 0.0
         for (u, v)
         in g.edges
     }
 
     nx.set_edge_attributes(g, gradients, 'gradients')
-    result = nx.pagerank(g, weight='gradients', alpha=alpha, max_iter=max_iter, tol=tol)
-
-    if normalized:
-        s = sum(result.values())
-        result = { n: v/s for n,v in result.items() }
+    result = nx.pagerank(g, weight='gradients')
 
     return result
