@@ -2,7 +2,7 @@ import unittest
 import networkx as nx
 import numpy as np
 
-from .. import network_energy
+from networkentropy import network_energy
 
 
 class NetworkEnergyTests(unittest.TestCase):
@@ -66,6 +66,25 @@ class NetworkEnergyTests(unittest.TestCase):
         computed_matrix = network_energy.get_symmetric_normalized_laplacian_matrix(g)
 
         self.assertTrue(np.isclose(expected_matrix, computed_matrix).all())
+
+    def test_dirichlet_energy(self):
+
+        X = np.array([
+            [1,1,1,1],
+            [0,0,0,1],
+            [1,1,0,0]
+        ])
+
+        self.assertAlmostEqual(network_energy.get_dirichlet_energy(X), 3.5)
+
+    def test_dirichlet_energy_wrong_input(self):
+
+        X = np.array([
+            1, 1, 1, 1
+        ])
+
+        with self.assertRaises(AssertionError):
+            network_energy.get_dirichlet_energy(X)
 
 
 if __name__ == '__main__':

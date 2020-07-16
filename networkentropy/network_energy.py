@@ -382,3 +382,19 @@ def gradient_centrality(g: nx.Graph,
     result = nx.pagerank(g, weight='gradients')
 
     return result
+
+
+def get_dirichlet_energy(gradients: np.array) -> float:
+    """
+    Computes the Dirichlet energy of the gradient vector field
+
+    Args:
+        gradients: array-like list of gradients at each graph vertex
+
+    Returns: positive float
+
+    """
+
+    assert gradients.ndim == 2, 'Input list of gradients must be 2-dimensional'
+
+    return 0.5 * np.sum(np.power(np.linalg.norm(gradients, axis=1), 2))
