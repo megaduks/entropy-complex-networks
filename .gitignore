@@ -98,6 +98,9 @@ modules.xml
 .ipynb_checkpoints
 */.ipynb_checkpoints/*
 
+# Ignore notebooks as they should be stored using 'percent' format with the help of Jupytext
+*.ipynb
+
 # IPython
 profile_default/
 ipython_config.py
