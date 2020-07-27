@@ -25,5 +25,6 @@ Follow the [instructions](https://jupytext.readthedocs.io/en/latest/install.html
 
 Jupytext tool automatically convert paired notebooks to and from `percent` format
 once the notebooks are paired. To pair all the scripts and to generate notebooks
-from them, run the script `pair_notebooks.py`
+from them the first time, run the script `pair_notebooks.py`.
+The script needs to run only once after cloning clean repository.
 
