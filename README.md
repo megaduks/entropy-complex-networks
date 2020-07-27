@@ -24,5 +24,6 @@ The format is supported by:
 Follow the [instructions](https://jupytext.readthedocs.io/en/latest/install.html) to install Jupytext.
 
 Jupytext tool automatically convert paired notebooks to and from `percent` format
-once the notebooks are paired.
+once the notebooks are paired. To pair all the scripts and to generate notebooks
+from them, run the script `pair_notebooks.py`
 
