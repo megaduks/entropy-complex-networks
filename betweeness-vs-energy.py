@@ -2,6 +2,7 @@
 # ---
 # jupyter:
 #   jupytext:
+#     formats: ipynb,py:percent
 #     text_representation:
 #       extension: .py
 #       format_name: percent
@@ -711,7 +712,7 @@ for error_type in transfer_real_prediction_results['error_type'].unique():
     ax = sns.heatmap(to_draw[['error_value', 'source_network', 'network']].pivot('source_network','network','error_value'), linewidth=0.5)
     ax.invert_yaxis()
     plt.show()
-    
+
 
 # %% [markdown]
 # #### Summary: 

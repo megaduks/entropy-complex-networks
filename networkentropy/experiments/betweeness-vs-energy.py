@@ -2,6 +2,7 @@
 # ---
 # jupyter:
 #   jupytext:
+#     formats: ipynb,py:percent
 #     text_representation:
 #       extension: .py
 #       format_name: percent
@@ -794,7 +795,7 @@ for error_type in ['MAE', 'MSE']:
     ax.invert_yaxis()
     
     plt.show()
-    
+
 
 # %%
 for error_type in ['pearson', 'spearman', 'kendall']:
@@ -816,7 +817,7 @@ for error_type in ['pearson', 'spearman', 'kendall']:
     ax.invert_yaxis()
     
     plt.show()
-    
+
 
 # %% [markdown]
 # #### Summary: 
