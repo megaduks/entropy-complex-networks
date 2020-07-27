@@ -18,8 +18,9 @@ def has_jupytext_metadata(dir_path, file, max_line):
 
 
 """
-This is a utility scripts that search recursively for all the python percent scripts with jupyter metadata
-and sets formats 'ipynb,py:percent' for those scripts. This operation results paring scripts with notebook files
+This is a utility script that searches recursively for all the python percent scripts with jupyter metadata
+and sets formats 'ipynb,py:percent' for those scripts. This operation results in paring scripts with notebook files
+and in generating notebooks from the scripts. 
 """
 if __name__ == '__main__':
     rootdir = os.path.join(os.path.dirname(__file__), '../')
