@@ -5,6 +5,7 @@ import networkx as nx
 import requests
 import wget
 import pandas as pd
+import numpy as np
 import copy
 import glob
 
@@ -14,6 +15,7 @@ from urllib.request import HTTPError
 from bs4 import BeautifulSoup
 from bs4.element import ResultSet
 from requests import Response
+from node2vec import Node2Vec
 
 NETWORK_NAME = 'network_name'
 CATEGORY = 'category'
@@ -355,3 +357,12 @@ def build_network_from_out_konect(network_name: str, tsv_url: str, directed: boo
         except TypeError:
 
             return None
+
+
+def embed_network(g: nx.Graph) -> np.ndarray:
+    """Uses Node2Vec algorithm to embed network nodes in a continuous vector space"""
+
+    node2vec = Node2Vec(g, dimensions=128, walk_length=10, num_walks=100, workers=4)
+    model = node2vec.fit(window=10, min_count=1, batch_words=5)
+
+    return model.wv.vectors

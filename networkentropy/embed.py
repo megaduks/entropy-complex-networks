@@ -7,7 +7,8 @@ from typing import Dict, List
 from networkentropy import network_energy as ne
 
 
-# TODO unify walk generation procedures by providing only the criterion for next node selection
+# TODO: unify walk generation procedures by providing only the criterion for next node selection
+# TODO: unify this file with network_utils.py implementation of node2vec
 
 def generate_random_walk(graph: object, walk_length: int, beta: float = 0.15) -> List:
     """

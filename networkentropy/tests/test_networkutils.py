@@ -1,8 +1,9 @@
 import unittest
 import os
 import shutil
+import networkx as nx
 
-from .. import network_utils
+from networkentropy import network_utils
 
 from typing import Iterable
 
@@ -79,6 +80,15 @@ class NetworkUtilsTests(unittest.TestCase):
                                                         dir_name=TESTS_DATA_PATH)
 
         self.assertTrue(g.number_of_nodes() == 6)
+
+    def test_node2vec_embedding(self):
+        g = nx.karate_club_graph()
+        ge = network_utils.embed_network(g)
+
+        num_rows, emb_size = ge.shape
+
+        self.assertEqual(num_rows, g.number_of_nodes())
+        self.assertEqual(emb_size, 128) # TODO: move params of node2vec to a settings file
 
 
 if __name__ == '__main__':
