@@ -2,6 +2,7 @@ import numpy as np
 import networkx as nx
 import scipy
 import scipy.stats
+import torch
 
 from typing import Dict, List
 
@@ -384,7 +385,7 @@ def gradient_centrality(g: nx.Graph,
     return result
 
 
-def get_dirichlet_energy(gradients: np.array) -> float:
+def get_dirichlet_energy(gradients: List[torch.Tensor]) -> float:
     """
     Computes the Dirichlet energy of the gradient vector field
 
@@ -395,6 +396,4 @@ def get_dirichlet_energy(gradients: np.array) -> float:
 
     """
 
-    assert gradients.ndim == 2, 'Input list of gradients must be 2-dimensional'
-
-    return 0.5 * np.sum(np.power(np.linalg.norm(gradients, axis=1), 2))
+    return 0.5 * sum([torch.norm(gradient)**2 for gradient in gradients])

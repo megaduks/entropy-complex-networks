@@ -1,5 +1,5 @@
 from abc import ABC
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 from itertools import *
 
 import torch
@@ -10,6 +10,10 @@ import torch.nn.functional as F
 
 import networkx as nx
 import numpy as np
+import pandas as pd
+import operator
+
+from networkentropy.network_energy import get_dirichlet_energy
 
 
 def generate_random_walk(g: nx.Graph, walk_length: int, beta: float = 0.15):
@@ -27,7 +31,7 @@ def generate_random_walk(g: nx.Graph, walk_length: int, beta: float = 0.15):
     walk = []
 
     current_node = np.random.choice(g.nodes)
-    walk.append(current_node)
+    walk.append(str(current_node))
 
     for i in range(walk_length):
         if np.random.random() <= beta:
@@ -77,15 +81,18 @@ class Node2Vec(nn.Module, ABC):
         return out
 
 
-def cross_entropy_loss(output, target):
+def cross_entropy_with_dirichlet_loss(output, target, alpha: float = 0.001):
     log_prob = -1.0 * F.log_softmax(output, 1)
     loss = log_prob.gather(1, target.unsqueeze(1))
     loss = loss.mean()
-    return loss
+
+    dirichlet_energy = get_dirichlet_energy(compute_degree_gradients(g, net, node_to_index))
+
+    return loss + alpha * dirichlet_energy
 
 
 class EarlyStopping():
-    def __init__(self, patience=5, min_percent_gain=0.1):
+    def __init__(self, patience=10, min_percent_gain=0.1):
         self.patience = patience
         self.loss_list = []
         self.min_percent_gain = min_percent_gain / 100.
@@ -99,20 +106,37 @@ class EarlyStopping():
         if len(self.loss_list) == 1:
             return False
         gain = (max(self.loss_list) - min(self.loss_list)) / max(self.loss_list)
-        # print(f"Loss gain: {round(100 * gain, 2)}%")
+
         if gain < self.min_percent_gain:
+            return True
+        elif self.loss_list[-1] > max(self.loss_list[:-1]):
             return True
         else:
             return False
 
 
+def compute_degree_gradients(g: nx.Graph, net: Node2Vec, n2i: Dict) -> np.array:
+    """Computes the gradients of degree for the current node embedding"""
+    gradients = []
+    degree = nx.degree(g)
+
+    for n in g.nodes:
+        neighbours = {k: v for k, v in nx.degree(g) if k in nx.neighbors(g, n)}
+        max_neighbor = max(neighbours.items(), key=operator.itemgetter(1))[0]
+        n_emb = net.embeddings.weight.data[n2i[str(n)]]
+        m_emb = net.embeddings.weight.data[n2i[str(max_neighbor)]]
+        gradients.append(m_emb - n_emb)
+
+    return gradients
+
+
 if __name__ == "__main__":
 
-    g = nx.florentine_families_graph()
+    g = nx.barabasi_albert_graph(n=50, m=3)
     walks = list()
 
     for i in range(100):
-        walks.append(generate_random_walk(g, walk_length=5))
+        walks.append(generate_random_walk(g, walk_length=10))
 
     vocabulary_size = len(g.nodes)
 
@@ -120,14 +144,13 @@ if __name__ == "__main__":
     for walk in walks:
         context_tuple_list += path_to_bon(walk)
 
-    node_to_index = {n: idx for (idx, n) in enumerate(g.nodes)}
-    index_to_node = {idx: n for (idx, n) in enumerate(g.nodes)}
+    node_to_index = {str(n): idx for (idx, n) in enumerate(g.nodes)}
+    index_to_node = {idx: str(n) for (idx, n) in enumerate(g.nodes)}
 
     net = Node2Vec(embedding_size=2, vocab_size=vocabulary_size)
-    # loss_function = nn.CrossEntropyLoss()
-    loss_function = cross_entropy_loss
+    loss_function = cross_entropy_with_dirichlet_loss
     optimizer = optim.Adam(net.parameters())
-    early_stopping = EarlyStopping()
+    early_stopping = EarlyStopping(min_percent_gain=0.01)
     context_tensor_list = []
 
     for target, context in context_tuple_list:
@@ -145,9 +168,14 @@ if __name__ == "__main__":
             optimizer.step()
             losses.append(loss.data)
         print("Loss: ", np.mean(losses))
+
         early_stopping.update_loss(np.mean(losses))
         if early_stopping.stop_training():
             break
 
+    result = []
+
     for n in g.nodes:
-        print(f"{n}: {net.embeddings.weight.data[node_to_index[n]]}")
+        result.append((n, nx.degree(g)[n]) + tuple(list(net.embeddings.weight.data[node_to_index[str(n)]].data.numpy())))
+
+    pd.DataFrame(result, columns=['node', 'degree', 'd1', 'd2']).to_csv('florentine.csv')
