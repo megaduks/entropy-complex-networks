@@ -71,6 +71,7 @@ class Node2Vec(nn.Module, ABC):
 
     def __init__(self, embedding_size, vocab_size):
         super(Node2Vec, self).__init__()
+        self.embedding_size = embedding_size
         self.embeddings = nn.Embedding(vocab_size, embedding_size)
         self.linear = nn.Linear(embedding_size, vocab_size)
 
@@ -121,11 +122,15 @@ def compute_degree_gradients(g: nx.Graph, net: Node2Vec, n2i: Dict) -> np.array:
     degree = nx.degree(g)
 
     for n in g.nodes:
-        neighbours = {k: v for k, v in nx.degree(g) if k in nx.neighbors(g, n)}
+        neighbours = {k: v for k, v in degree if k in nx.neighbors(g, n)}
         max_neighbor = max(neighbours.items(), key=operator.itemgetter(1))[0]
-        n_emb = net.embeddings.weight.data[n2i[str(n)]]
-        m_emb = net.embeddings.weight.data[n2i[str(max_neighbor)]]
-        gradients.append(m_emb - n_emb)
+
+        if degree[max_neighbor] > degree[n]:
+            n_emb = net.embeddings.weight.data[n2i[str(n)]]
+            m_emb = net.embeddings.weight.data[n2i[str(max_neighbor)]]
+            gradients.append(m_emb - n_emb)
+        else:
+            gradients.append(torch.zeros(net.embedding_size))
 
     return gradients
 
