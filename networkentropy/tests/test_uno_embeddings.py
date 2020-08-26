@@ -1,6 +1,6 @@
 import unittest
 
-from networkentropy.uno.train import sliding, path_to_bon
+from networkentropy.embeddings import extract_context_pairs, sliding
 
 
 class TestUnoEmbeddings(unittest.TestCase):
@@ -20,7 +20,7 @@ class TestUnoEmbeddings(unittest.TestCase):
 
     def test_path_to_bon(self):
         path = list(range(1, 7))
-        result = path_to_bon(path=path, context_size=2)
+        result = extract_context_pairs(path=path, context_size=2)
         expected = [
             (1, 3), (2, 3), (3, 4), (3, 5),
             (2, 4), (3, 4), (4, 5), (4, 6),

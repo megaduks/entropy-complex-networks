@@ -7,8 +7,8 @@ import pandas as pd
 
 from scipy.stats import ks_2samp
 
-from networkentropy import network_energy as ne
-from networkentropy.embed import node2vec
+from networkentropy import energy as ne
+from networkentropy.embeddings import node2vec
 
 
 #TODO: change sample_ratio to accept either an int (absolute) or float (relative)
