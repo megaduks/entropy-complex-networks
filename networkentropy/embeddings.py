@@ -184,18 +184,32 @@ def extract_context_pairs(path: List, context_size: int = 2) -> List[Tuple]:
     return context_pairs
 
 
-def cross_entropy_with_dirichlet_loss(output, target, alpha: float = 0.001, **kwargs):
-    log_prob = -1.0 * F.log_softmax(output, 1)
-    loss = log_prob.gather(1, target.unsqueeze(1))
-    loss = loss.mean()
+class DirichletCrossEntropy:
+    def __init__(self, graph: nx.Graph, criterion: Callable, alpha: float = 0.001):
+        self.graph = graph
+        self.criterion = criterion
+        self.alpha = alpha
 
-    graph = kwargs['graph']
-    model = kwargs['model']
-    mapping = kwargs['mapping']
+    def compute(self, output, target):
+        log_prob = -1.0 * F.log_softmax(output, 1)
+        loss = log_prob.gather(1, target.unsqueeze(1))
+        loss = loss.mean()
 
-    dirichlet_energy = get_dirichlet_energy(compute_degree_gradients(graph, model, mapping))
+        dirichlet_energy = get_dirichlet_energy(compute_degree_gradients(self.graph, 'uno', self.criterion))
 
-    return loss + alpha * dirichlet_energy
+        return loss + self.alpha * dirichlet_energy
+
+
+class CrossEntropy:
+    def __init__(self):
+        pass
+
+    def compute(self, output, target):
+        log_prob = -1.0 * F.log_softmax(output, 1)
+        loss = log_prob.gather(1, target.unsqueeze(1))
+        loss = loss.mean()
+
+        return loss
 
 
 def random_walk_generator(graph: nx.Graph, walk_length: int, num_walks: int) -> List[Tuple]:
@@ -203,8 +217,8 @@ def random_walk_generator(graph: nx.Graph, walk_length: int, num_walks: int) -> 
     walks = list()
 
     for _ in range(num_walks):
-        node = np.random.choice(graph.nodes)
-        walks.append(generate_random_walk(graph=graph, node=node, walk_length=walk_length))
+        for node in graph.nodes:
+            walks.append(generate_random_walk(graph=graph, node=node, walk_length=walk_length))
 
     context_tuple_list = []
 
@@ -217,7 +231,7 @@ def random_walk_generator(graph: nx.Graph, walk_length: int, num_walks: int) -> 
 class UnoEmbedding(nn.Module, ABC):
 
     def __init__(self, embedding_size: int, network_size: int, walk_length: int, num_walks: int,
-                 walk_generator: Callable):
+                 walk_generator: Callable, loss: object):
         super(UnoEmbedding, self).__init__()
         self.embedding_size = embedding_size
         self.vocab_size = network_size
@@ -226,6 +240,7 @@ class UnoEmbedding(nn.Module, ABC):
         self.embeddings = nn.Embedding(network_size, embedding_size)
         self.linear = nn.Linear(embedding_size, network_size)
         self.walk_generator = walk_generator
+        self.loss = loss
 
     def forward(self, context_word):
         emb = self.embeddings(context_word)
@@ -240,8 +255,7 @@ class UnoEmbedding(nn.Module, ABC):
         def get_uno_embeddings(graph: nx.Graph, mapping: Dict) -> Dict:
             return {n: self.embeddings.weight.data[mapping[n]].data.numpy() for n in graph.nodes}
 
-        node_to_index = {n: idx for (idx, n) in enumerate(g.nodes)}
-        loss_function = cross_entropy_with_dirichlet_loss
+        node_to_index = {n: idx for (idx, n) in enumerate(graph.nodes)}
         optimizer = optim.Adam(self.parameters())
         early_stopping = EarlyStopping(min_percent_gain=0.05)
 
@@ -260,7 +274,7 @@ class UnoEmbedding(nn.Module, ABC):
                 self.zero_grad()
                 log_probs = self(context_tensor)
                 get_uno_embeddings(graph=graph, mapping=node_to_index)
-                loss = loss_function(log_probs, target_tensor, graph=graph, model=self, mapping=node_to_index)
+                loss = self.loss.compute(log_probs, target_tensor)
                 loss.backward()
                 optimizer.step()
                 losses.append(loss.data)
@@ -298,12 +312,3 @@ class EarlyStopping():
         else:
             return False
 
-
-if __name__ == '__main__':
-    g = nx.florentine_families_graph()
-    model = UnoEmbedding(embedding_size=5, network_size=len(g.nodes), walk_length=7, num_walks=100,
-                         walk_generator=random_walk_generator)
-
-    model.fit(graph=g)
-
-    print(nx.get_node_attributes(g, 'uno'))

@@ -643,21 +643,22 @@ def clear_cache():
         function.cache_clear()
 
 
-def compute_degree_gradients(g: nx.Graph, net: Node2Vec, n2i: Dict) -> np.array:
+def compute_degree_gradients(g: nx.Graph, embedding_name: str, criterion: Callable) -> np.array:
     """Computes the gradients of degree for the current node embedding"""
     gradients = []
-    degree = nx.degree(g)
+    scalars = criterion(g)
+    embeddings = nx.get_node_attributes(g, embedding_name)
 
     for n in g.nodes:
-        neighbours = {k: v for k, v in degree if k in nx.neighbors(g, n)}
+        neighbours = {k: v for k, v in scalars.items() if k in nx.neighbors(g, n)}
         max_neighbor = max(neighbours.items(), key=operator.itemgetter(1))[0]
 
-        if degree[max_neighbor] > degree[n]:
-            n_emb = net.embeddings.weight.data[n2i[str(n)]]
-            m_emb = net.embeddings.weight.data[n2i[str(max_neighbor)]]
+        if scalars[max_neighbor] > scalars[n]:
+            n_emb = torch.Tensor(embeddings[n])
+            m_emb = torch.Tensor(embeddings[max_neighbor])
             gradients.append(m_emb - n_emb)
         else:
-            gradients.append(torch.zeros(net.embedding_size))
+            gradients.append(torch.zeros(embeddings[n].shape[0]))
 
     return gradients
 
