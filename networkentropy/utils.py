@@ -13,6 +13,7 @@ import copy
 import glob
 
 from collections import namedtuple, UserDict
+from itertools import combinations
 from typing import List, Iterable, Optional
 from bs4 import BeautifulSoup
 from bs4.element import ResultSet
@@ -729,3 +730,10 @@ def node_attribute_setter(name: str) -> Callable:
     return decorator
 
 
+def lipschitz_constant(x: Iterable, y: Iterable) -> float:
+    """Computes the Lipschitz constant for an  empirical function"""
+
+    assert len(x) == len(y), "Both input lists must be of the same length"
+    assert max(y) < np.inf and min(y) > -np.inf, "Function values cannot be infinite"
+
+    return max([(np.abs(y[i] - y[j]) / np.abs(x[i] - x[j])) for (i, j) in combinations(range(len(x)), 2)])

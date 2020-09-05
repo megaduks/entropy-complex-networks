@@ -230,6 +230,19 @@ class UtilsTests(unittest.TestCase):
         self.assertEqual(num_rows, g.number_of_nodes())
         self.assertEqual(emb_size, 128)  # TODO: move params of node2vec to a settings file
 
+    def test_lipschitz_constant(self):
+        x = np.arange(1, 100)
+        y = np.log(x)
+
+        self.assertLess(utils.lipschitz_constant(x, y), 1)
+
+    def test_lipschitz_constant_infinite_vals(self):
+        x = np.arange(0, 10)
+        y = 1/x
+
+        with self.assertRaises(AssertionError):
+            utils.lipschitz_constant(x, y)
+
 
 if __name__ == '__main__':
     unittest.main()
