@@ -730,10 +730,13 @@ def node_attribute_setter(name: str) -> Callable:
     return decorator
 
 
-def lipschitz_constant(x: Iterable, y: Iterable) -> float:
+def lipschitz_constant(x: Iterable, y: Iterable, normalize: bool = True) -> float:
     """Computes the Lipschitz constant for an  empirical function"""
 
     assert len(x) == len(y), "Both input lists must be of the same length"
     assert max(y) < np.inf and min(y) > -np.inf, "Function values cannot be infinite"
+
+    if normalize:
+        y = (y - np.min(y)) / (np.max(y) - np.min(y))
 
     return max([(np.abs(y[i] - y[j]) / np.abs(x[i] - x[j])) for (i, j) in combinations(range(len(x)), 2)])
