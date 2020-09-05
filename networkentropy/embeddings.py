@@ -248,7 +248,7 @@ class UnoEmbedding(nn.Module, ABC):
         out = F.log_softmax(hidden)
         return out
 
-    def fit(self, graph: nx.Graph):
+    def fit(self, graph: nx.Graph) -> List:
         """Trains a node2vec embedding using the list of pairs of context nodes"""
 
         @node_attribute_setter(name='uno')
@@ -285,6 +285,8 @@ class UnoEmbedding(nn.Module, ABC):
             early_stopping.update_loss(np.mean(losses))
             if early_stopping.stop_training():
                 break
+
+        return epoch_loss
 
 
 class EarlyStopping():
