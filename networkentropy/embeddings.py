@@ -248,7 +248,7 @@ class UnoEmbedding(nn.Module, ABC):
         out = F.log_softmax(hidden)
         return out
 
-    def fit(self, graph: nx.Graph) -> List:
+    def fit(self, graph: nx.Graph, verbose: bool = True) -> List:
         """Trains a node2vec embedding using the list of pairs of context nodes"""
 
         @node_attribute_setter(name='uno')
@@ -279,7 +279,9 @@ class UnoEmbedding(nn.Module, ABC):
                 optimizer.step()
                 losses.append(loss.data)
 
-            print("Loss: ", np.mean(losses))
+            if verbose:
+                print("Loss: ", np.mean(losses))
+
             epoch_loss.append(np.mean(losses))
 
             early_stopping.update_loss(np.mean(losses))
